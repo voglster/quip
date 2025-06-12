@@ -13,6 +13,9 @@ class QuickNote:
         self.root = tk.Tk()
         self.root.title("Quip")
 
+        # Hide window initially to prevent flash
+        self.root.withdraw()
+
         # Try different approach for borderless window
         try:
             # Linux/X11 specific attributes for borderless window
@@ -138,6 +141,9 @@ class QuickNote:
         self.text.bind("<Control-Return>", self.save_and_exit)
         self.text.bind("<Control-d>", self.save_and_exit)
         self.text.bind("<Escape>", lambda e: self.root.destroy())
+
+        # Show window after everything is configured
+        self.root.deiconify()
 
         # Ensure proper focus
         self.root.after(100, self.ensure_focus)
