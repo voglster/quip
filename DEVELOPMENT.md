@@ -3,9 +3,13 @@
 **Vision**: A frictionless thought capture tool that interrupts your workflow as little as possible. Press hotkey → capture thought → back to work.
 
 ## Current State
-- Simple tkinter GUI with dark theme
+
+✅ **Working Prototype** (v0.2)
+- Python/tkinter desktop app with borderless overlay
+- Dark theme with clean UI (no borders/decorations)
+- Multi-monitor support with xrandr detection
 - Saves notes to `~/notes/5. Inbox/Inbox.md`
-- Basic keyboard shortcuts (Ctrl+Enter/Ctrl+D to save, Escape to exit)
+- Core hotkeys: `Ctrl+Enter`/`Ctrl+D` to save, `Escape` to exit
 - Python package with `uv` dependency management
 
 ## Core Philosophy
@@ -16,14 +20,13 @@
 
 ## Priority Improvements
 
-### 1. Borderless Overlay UI
-**Priority: Critical**
-- [ ] Remove window decorations (title bar, close/minimize buttons)
-- [ ] Overlay/HUD-style interface that floats above other windows
-- [ ] Minimal visual chrome - just text input with subtle border/shadow
-- [ ] Center on screen, fixed size initially
-- [ ] Evaluate frameworks: CustomTkinter, or stay with tkinter frameless
-- [ ] Test different levels of transparency/visual weight
+### 1. Borderless Overlay UI ✅ **COMPLETED**
+- [x] Remove window decorations (title bar, close/minimize buttons)
+- [x] Overlay/HUD-style interface that floats above other windows
+- [x] Minimal visual chrome - just text input with subtle border/shadow
+- [x] Center on screen, multi-monitor support
+- [x] Using tkinter splash window type for borderless effect
+- [x] Keep stdlib-only approach (no CustomTkinter dependency)
 
 ### 2. Global Hotkey Integration  
 **Priority: Critical**
@@ -65,11 +68,9 @@
 
 ## Technical Approach
 
-### UI Framework Options
-- **Tkinter (frameless)** - Keep it simple, remove decorations
-- **CustomTkinter** - Better styling while staying lightweight  
-- **PyQt6** - More control over window behavior
-- **Web-based overlay** - Ultimate flexibility but more complex
+### UI Framework Decision ✅ **RESOLVED**
+- **Tkinter (splash window)** - Stdlib-only, borderless overlay achieved
+- Simple, fast, universally compatible
 
 ### LLM Integration
 - Use existing local Ollama instance
@@ -95,11 +96,10 @@
 4. **LLM integration** - Add optional cleanup capability
 5. **Voice recording** - Add speech input option
 
-## Current Tasks
-- [ ] Implement borderless overlay UI (remove window decorations)
+## Next Priority Tasks
 - [ ] Add global hotkey support for system-wide spawning
+- [ ] Create basic configuration system (debug mode, basic settings)
 - [ ] Create GitHub release-based installer with auto-update checking
-- [ ] Test different UI frameworks for better overlay experience
 
 ## Non-Goals
 - Complex note organization (separate project handles this)
