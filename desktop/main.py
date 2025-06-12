@@ -12,6 +12,7 @@ class QuickNote:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Quip")
+        self.text_before_improvement = None  # Store text before LLM improvement
 
         # Hide window initially to prevent flash
         self.root.withdraw()
@@ -141,6 +142,8 @@ class QuickNote:
         self.text.bind("<Control-Return>", self.save_and_exit)
         self.text.bind("<Control-d>", self.save_and_exit)
         self.text.bind("<Control-s>", self.open_settings)
+        self.text.bind("<Control-i>", self.improve_note)
+        self.text.bind("<Control-z>", self.undo_improvement)
         self.text.bind("<Escape>", lambda e: self.root.destroy())
 
         # Show window after everything is configured
@@ -236,6 +239,90 @@ class QuickNote:
 
         # Close current Quip window so fresh config loads on next spawn
         self.root.destroy()
+
+    def undo_improvement(self, event=None):
+        """Undo the last LLM improvement and restore original text"""
+        if self.text_before_improvement is None:
+            if config.debug_mode:
+                print("DEBUG: No previous text to restore")
+            return
+
+        # Restore the text before improvement
+        self.text.delete("1.0", "end")
+        self.text.insert("1.0", self.text_before_improvement)
+
+        # Clear the stored text (only allow one undo)
+        self.text_before_improvement = None
+
+        if config.debug_mode:
+            print("DEBUG: Restored text before improvement")
+
+    def improve_note(self, event=None):
+        """Improve the current note using LLM"""
+        if not config.llm_enabled:
+            if config.debug_mode:
+                print("DEBUG: LLM not enabled")
+            return
+
+        current_text = self.text.get("1.0", "end-1c").strip()
+        if not current_text:
+            if config.debug_mode:
+                print("DEBUG: No text to improve")
+            return
+
+        try:
+            from llm import llm_client, LLMError
+
+            # Store original text for undo functionality
+            self.text_before_improvement = current_text
+
+            # Save original text and styling
+            original_bg = self.text.cget("bg")
+            original_cursor = self.text.cget("insertbackground")
+
+            # Clear text and show waiting message
+            self.text.delete("1.0", "end")
+            self.text.insert("1.0", "✨ Improving with AI...")
+            self.text.configure(
+                bg="#3a3a3a",  # Slightly lighter background
+                insertbackground="#888888",  # Dimmed cursor
+            )
+            self.text.config(state="disabled")  # Disable editing while processing
+            self.root.update_idletasks()
+
+            improved_text = llm_client.improve_note(current_text)
+
+            # Restore editing and replace with improved text
+            self.text.config(state="normal")
+            self.text.delete("1.0", "end")
+            self.text.insert("1.0", improved_text)
+
+            # Restore original styling
+            self.text.configure(bg=original_bg, insertbackground=original_cursor)
+
+            if config.debug_mode:
+                print("DEBUG: Note improved successfully")
+
+        except LLMError as e:
+            # Restore text and styling on error
+            self.text.config(state="normal")
+            self.text.delete("1.0", "end")
+            self.text.insert("1.0", current_text)  # Restore original text
+            self.text.configure(bg=original_bg, insertbackground=original_cursor)
+            # Clear stored text since improvement failed
+            self.text_before_improvement = None
+            if config.debug_mode:
+                print(f"DEBUG: LLM error: {e}")
+        except Exception as e:
+            # Restore text and styling on unexpected error
+            self.text.config(state="normal")
+            self.text.delete("1.0", "end")
+            self.text.insert("1.0", current_text)  # Restore original text
+            self.text.configure(bg=original_bg, insertbackground=original_cursor)
+            # Clear stored text since improvement failed
+            self.text_before_improvement = None
+            if config.debug_mode:
+                print(f"DEBUG: Unexpected error during improvement: {e}")
 
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()

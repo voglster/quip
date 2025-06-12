@@ -37,6 +37,16 @@ class QuipConfig:
                 "auto_update_check": True,
                 "check_interval_hours": 1,
             },
+            "llm": {
+                "enabled": False,
+                "base_url": "http://10.0.6.16:11434",
+                "model": "LoTUs5494/mistral-small-3.1:latest",
+                "api_key": "",
+                "timeout_seconds": 30,
+                "max_tokens": 1000,
+                "temperature": 0.7,
+                "improve_prompt": "This is a quick note that needs improvement. Fix spelling, grammar, and clarity while preserving the original meaning and intent. Return only the improved text without explanations or additions:",
+            },
         }
 
     def _ensure_config_dir(self):
@@ -168,6 +178,50 @@ class QuipConfig:
     def check_interval_hours(self) -> int:
         """Get update check interval in hours"""
         return self.get("updates", "check_interval_hours", 1)
+
+    @property
+    def llm_enabled(self) -> bool:
+        """Get LLM enabled setting"""
+        return self.get("llm", "enabled", False)
+
+    @property
+    def llm_base_url(self) -> str:
+        """Get LLM base URL"""
+        return self.get("llm", "base_url", "http://10.0.6.16:11434")
+
+    @property
+    def llm_model(self) -> str:
+        """Get LLM model name"""
+        return self.get("llm", "model", "LoTUs5494/mistral-small-3.1:latest")
+
+    @property
+    def llm_api_key(self) -> str:
+        """Get LLM API key"""
+        return self.get("llm", "api_key", "")
+
+    @property
+    def llm_timeout_seconds(self) -> int:
+        """Get LLM timeout in seconds"""
+        return self.get("llm", "timeout_seconds", 30)
+
+    @property
+    def llm_max_tokens(self) -> int:
+        """Get LLM max tokens"""
+        return self.get("llm", "max_tokens", 1000)
+
+    @property
+    def llm_temperature(self) -> float:
+        """Get LLM temperature"""
+        return self.get("llm", "temperature", 0.7)
+
+    @property
+    def llm_improve_prompt(self) -> str:
+        """Get LLM improve prompt"""
+        return self.get(
+            "llm",
+            "improve_prompt",
+            "This is a quick note that needs improvement. Fix spelling, grammar, and clarity while preserving the original meaning and intent. Return only the improved text without explanations or additions:",
+        )
 
 
 # Global config instance
