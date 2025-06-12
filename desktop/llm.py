@@ -56,11 +56,12 @@ class LLMClient:
         except Exception as e:
             raise LLMError(f"Request failed: {e}")
 
-    def improve_note(self, text: str) -> str:
+    def improve_note(self, text: str, curator_feedback: str = None) -> str:
         """Improve a quick note using configured prompt
 
         Args:
             text: The note text to improve
+            curator_feedback: Optional curator feedback to provide context
 
         Returns:
             Improved note text
@@ -76,12 +77,18 @@ class LLMClient:
 
         prompt = config.llm_improve_prompt
 
+        # If curator feedback is provided, include it in the context
+        if curator_feedback:
+            user_content = f"{prompt}\n\nCurator feedback that was provided to the user:\n{curator_feedback}\n\nNote to improve:\n{text}"
+        else:
+            user_content = f"{prompt}\n\n{text}"
+
         messages = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant that improves text. Return only the improved text without any explanations, quotes, or additional formatting.",
+                "content": "You are a helpful assistant that improves text. Return only the improved text without any explanations, quotes, or additional formatting. If curator feedback is provided, use it to guide your improvements.",
             },
-            {"role": "user", "content": f"{prompt}\n\n{text}"},
+            {"role": "user", "content": user_content},
         ]
 
         request_data = {

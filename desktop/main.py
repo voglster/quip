@@ -20,6 +20,11 @@ class QuickNote:
         self.root = tk.Tk()
         self.root.title("Quip")
         self.text_before_improvement = None  # Store text before LLM improvement
+        self.curator_mode = False  # Track if curator feedback is shown
+        self.original_height = None  # Store original window height
+        self.current_curator_feedback = (
+            None  # Store current curator feedback for context
+        )
 
         # Hide window initially to prevent flash
         self.root.withdraw()
@@ -58,6 +63,7 @@ class QuickNote:
         # Set window size and position (centered on primary monitor)
         window_width = config.window_width
         window_height = config.window_height
+        self.original_height = window_height  # Store for expansion/collapse
 
         # Get monitor dimensions and find current monitor
         self.root.update_idletasks()  # Ensure window is ready
@@ -118,13 +124,13 @@ class QuickNote:
         # Configure the root window background
         self.root.configure(bg=bg_color)
 
-        # Create a frame for padding
-        frame = tk.Frame(self.root, bg=bg_color)
-        frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # Create a main frame for padding
+        main_frame = tk.Frame(self.root, bg=bg_color)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Create and configure the text widget with minimal padding
         self.text = tk.Text(
-            frame,
+            main_frame,
             font=("Helvetica", 14),
             wrap="word",
             height=4,
@@ -137,6 +143,36 @@ class QuickNote:
             bd=0,  # Remove border
         )
         self.text.pack(fill="both", expand=True)
+
+        # Create curator feedback area (initially hidden)
+        self.curator_frame = tk.Frame(main_frame, bg=bg_color)
+
+        # Add a subtle divider
+        divider = tk.Frame(self.curator_frame, bg="#404040", height=1)
+        divider.pack(fill="x", pady=(5, 5))
+
+        # Curator feedback text area (read-only)
+        self.curator_text = tk.Text(
+            self.curator_frame,
+            font=("Helvetica", 12),
+            wrap="word",
+            height=6,
+            bg="#1e1e1e",  # Slightly darker than main
+            fg="#cccccc",  # Slightly dimmer text
+            relief="flat",
+            padx=8,
+            pady=8,
+            bd=0,
+            state="disabled",  # Read-only
+        )
+        self.curator_text.pack(fill="both", expand=True, pady=(0, 5))
+
+        # Configure curator text colors
+        self.curator_text.configure(
+            highlightthickness=0,
+            selectbackground="#303030",
+            selectforeground="#cccccc",
+        )
 
         # Remove the default highlight colors and borders
         self.text.configure(
@@ -151,6 +187,7 @@ class QuickNote:
         self.text.bind("<Control-s>", self.open_settings)
         self.text.bind("<Control-i>", self.improve_note)
         self.text.bind("<Control-z>", self.undo_improvement)
+        self.text.bind("<Control-l>", self.toggle_curator_mode)
         self.text.bind("<Escape>", lambda e: self.root.destroy())
 
         # Show window after everything is configured
@@ -297,7 +334,11 @@ class QuickNote:
             self.text.config(state="disabled")  # Disable editing while processing
             self.root.update_idletasks()
 
-            improved_text = llm_client.improve_note(current_text)
+            # Pass curator feedback as context if available
+            curator_context = (
+                self.current_curator_feedback if self.curator_mode else None
+            )
+            improved_text = llm_client.improve_note(current_text, curator_context)
 
             # Restore editing and replace with improved text
             self.text.config(state="normal")
@@ -306,6 +347,9 @@ class QuickNote:
 
             # Restore original styling
             self.text.configure(bg=original_bg, insertbackground=original_cursor)
+
+            # Clear curator mode after improvement
+            self.clear_curator_mode()
 
             if config.debug_mode:
                 print("DEBUG: Note improved successfully")
@@ -330,6 +374,164 @@ class QuickNote:
             self.text_before_improvement = None
             if config.debug_mode:
                 print(f"DEBUG: Unexpected error during improvement: {e}")
+
+    def toggle_curator_mode(self, event=None):
+        """Toggle curator feedback mode and get feedback for current note"""
+        if not config.llm_enabled:
+            if config.debug_mode:
+                print("DEBUG: LLM not enabled for curator mode")
+            return
+
+        current_text = self.text.get("1.0", "end-1c").strip()
+        if not current_text:
+            if config.debug_mode:
+                print("DEBUG: No text to curate")
+            return
+
+        if not self.curator_mode:
+            # Show curator mode and get feedback
+            self.show_curator_feedback(current_text)
+        else:
+            # Already in curator mode, refresh feedback
+            self.show_curator_feedback(current_text)
+
+    def show_curator_feedback(self, text):
+        """Show curator feedback area and get LLM feedback"""
+        try:
+            from llm import LLMError
+
+            # Show loading state in curator area
+            self.curator_text.config(state="normal")
+            self.curator_text.delete("1.0", "end")
+            self.curator_text.insert("1.0", "🤔 Analyzing your note...")
+            self.curator_text.config(state="disabled")
+
+            # Show curator frame if not already visible
+            if not self.curator_mode:
+                self.curator_frame.pack(fill="both", expand=True, pady=(5, 0))
+                self.expand_window()
+                self.curator_mode = True
+
+            self.root.update_idletasks()
+
+            # Get curator feedback
+            feedback = self.get_curator_feedback(text)
+
+            # Update curator area with feedback
+            self.curator_text.config(state="normal")
+            self.curator_text.delete("1.0", "end")
+            self.curator_text.insert("1.0", feedback)
+            self.curator_text.config(state="disabled")
+
+            # Store feedback for context in improvements
+            self.current_curator_feedback = feedback
+
+            if config.debug_mode:
+                print("DEBUG: Curator feedback displayed")
+
+        except LLMError as e:
+            # Show error in curator area
+            self.curator_text.config(state="normal")
+            self.curator_text.delete("1.0", "end")
+            self.curator_text.insert("1.0", f"❌ Error getting feedback: {e}")
+            self.curator_text.config(state="disabled")
+            if config.debug_mode:
+                print(f"DEBUG: Curator LLM error: {e}")
+        except Exception as e:
+            # Show error in curator area
+            self.curator_text.config(state="normal")
+            self.curator_text.delete("1.0", "end")
+            self.curator_text.insert("1.0", f"❌ Unexpected error: {e}")
+            self.curator_text.config(state="disabled")
+            if config.debug_mode:
+                print(f"DEBUG: Curator unexpected error: {e}")
+
+    def get_curator_feedback(self, text):
+        """Get curator feedback from LLM"""
+        from llm import llm_client, LLMError
+
+        prompt = """You are a thoughtful note-taking curator helping someone capture clear, actionable thoughts. 
+
+This person just captured a quick note. In 2-3 short questions or observations, help them clarify what's important about this note. Be concise and actionable.
+
+Examples:
+- "What's the specific next action here?"
+- "Is there a deadline or timeline?"
+- "Who else needs to know about this?"
+- "What context would help you remember this later?"
+
+Keep it brief and helpful."""
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful note-taking curator. Provide 2-3 short questions or observations to help improve notes. Be concise and actionable.",
+            },
+            {"role": "user", "content": f"{prompt}\n\nNote: {text}"},
+        ]
+
+        request_data = {
+            "model": config.llm_model,
+            "messages": messages,
+            "max_tokens": config.llm_max_tokens,
+            "temperature": config.llm_temperature,
+        }
+
+        if config.debug_mode:
+            print("DEBUG: Getting curator feedback")
+            print(f"DEBUG: Note text: '{text}'")
+
+        response = llm_client._make_request("chat/completions", request_data)
+
+        if "choices" not in response or not response["choices"]:
+            raise LLMError("No response choices returned from API")
+
+        content = response["choices"][0]["message"]["content"]
+        return content.strip()
+
+    def expand_window(self):
+        """Expand window to show curator area"""
+        if self.original_height is None:
+            return
+
+        # Expand height to accommodate curator area
+        expanded_height = self.original_height + 200  # Add space for curator area
+
+        # Get current window position
+        current_geometry = self.root.geometry()
+        width_height, x_y = current_geometry.split("+", 1)
+        width, height = width_height.split("x")
+        x, y = x_y.split("+")
+
+        # Update geometry with new height
+        new_geometry = f"{width}x{expanded_height}+{x}+{y}"
+        self.root.geometry(new_geometry)
+
+        if config.debug_mode:
+            print(f"DEBUG: Expanded window from {height} to {expanded_height}")
+
+    def clear_curator_mode(self):
+        """Clear curator mode and hide feedback area"""
+        if self.curator_mode:
+            # Hide curator frame
+            self.curator_frame.pack_forget()
+
+            # Restore original window height
+            if self.original_height is not None:
+                current_geometry = self.root.geometry()
+                width_height, x_y = current_geometry.split("+", 1)
+                width, height = width_height.split("x")
+                x, y = x_y.split("+")
+
+                new_geometry = f"{width}x{self.original_height}+{x}+{y}"
+                self.root.geometry(new_geometry)
+
+            # Clear state
+            self.curator_mode = False
+            self.current_curator_feedback = None
+
+            if config.debug_mode:
+                print("DEBUG: Curator mode cleared")
 
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()
