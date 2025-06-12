@@ -55,8 +55,7 @@
 - Plugin architecture
 
 ## Ideas for Future
-- Move the notes file path to a config in the system section
-- Voice recording integration with whisper.cpp
-- Optional LLM cleanup with local Ollama
+
+See [IDEAS.md](IDEAS.md) for additional feature ideas and improvements.
 
 Keep it focused on instant thought capture.
