@@ -7,6 +7,8 @@ import time
 import threading
 
 from config import config
+from voice_recorder import VoiceRecorder
+from transcription import create_transcription_service
 
 # Handle tomli import for Python < 3.11
 if sys.version_info >= (3, 11):
@@ -30,15 +32,41 @@ class QuickNote:
 
         # Voice recording state
         self.tab_press_time = None
-        self.tab_hold_threshold = 0.2  # 200ms threshold
+        self.tab_hold_threshold = (
+            config.voice_hold_threshold_ms / 1000.0
+        )  # Convert to seconds
         self.recording_mode = False
         self.tab_physically_pressed = False  # Track physical key state
         self.tab_consumed_as_hold = False  # Track if this press was used for recording
         self.tab_release_time = None  # Track when tab was released
         self.release_debounce_time = 0.1  # 100ms debounce for rapid press/release
+        self.recording_tail_time = (
+            config.voice_recording_tail_ms / 1000.0
+        )  # Convert to seconds
+        self.recording_tail_active = False  # Track if we're in the tail period
 
         # Initialize audio feedback paths
         self.init_audio()
+
+        # Initialize voice recording and transcription
+        self.voice_recorder = VoiceRecorder()
+        self.transcription_service = create_transcription_service(
+            model_size=config.voice_model_size, language=config.voice_language
+        )
+
+        # Set up voice recording callbacks
+        self.voice_recorder.on_recording_start = self.on_voice_recording_start
+        self.voice_recorder.on_recording_stop = self.on_voice_recording_stop
+
+        # Set up transcription callbacks
+        self.transcription_service.on_transcription_start = self.on_transcription_start
+        self.transcription_service.on_transcription_complete = (
+            self.on_transcription_complete
+        )
+        self.transcription_service.on_transcription_error = self.on_transcription_error
+
+        # Initialize transcription service asynchronously
+        self.transcription_service.initialize_async()
 
         # Hide window initially to prevent flash
         self.root.withdraw()
@@ -196,6 +224,50 @@ class QuickNote:
         # Position overlay in center of text area
         self.empty_state_overlay.place(relx=0.5, rely=0.4, anchor="center")
 
+        # Create recording overlay frame (covers most of the text area)
+        self.recording_overlay = tk.Frame(
+            main_frame,
+            bg="#4d2626",  # Dark red background
+            relief="solid",
+            bd=2,
+            highlightbackground="#ff6666",
+            highlightcolor="#ff6666",
+            highlightthickness=2,
+        )
+
+        # Create recording label inside the overlay
+        self.recording_label = tk.Label(
+            self.recording_overlay,
+            text="🎤 Recording... (release Tab to stop)",
+            font=("Helvetica", 18, "bold"),
+            fg="#ff9999",
+            bg="#4d2626",
+            justify="center",
+        )
+        self.recording_label.pack(expand=True)
+
+        # Create processing overlay frame (covers most of the text area)
+        self.processing_overlay = tk.Frame(
+            main_frame,
+            bg="#264d4d",  # Dark blue background
+            relief="solid",
+            bd=2,
+            highlightbackground="#6699ff",
+            highlightcolor="#6699ff",
+            highlightthickness=2,
+        )
+
+        # Create processing label inside the overlay
+        self.processing_label = tk.Label(
+            self.processing_overlay,
+            text="🧠 Processing audio...",
+            font=("Helvetica", 18, "bold"),
+            fg="#99ccff",
+            bg="#264d4d",
+            justify="center",
+        )
+        self.processing_label.pack(expand=True)
+
         # Create info icon frame (positioned in bottom right)
         self.info_frame = tk.Frame(main_frame, bg=bg_color)
         self.info_frame.pack(side="bottom", anchor="se", pady=(0, 2))
@@ -352,16 +424,59 @@ class QuickNote:
         """Update empty state overlay visibility based on text content"""
         current_text = self.text.get("1.0", "end-1c").strip()
         if current_text:
-            # Hide overlay when there's text
+            # Hide all overlays when there's text
             self.empty_state_overlay.place_forget()
+            self.recording_overlay.place_forget()
+            self.processing_overlay.place_forget()
         else:
-            # Show overlay when text is empty with a fresh random message
+            # Hide recording/processing overlays
+            self.recording_overlay.place_forget()
+            self.processing_overlay.place_forget()
+
+            # Show empty state overlay when text is empty with a fresh random message
             import random
 
             self.empty_state_overlay.config(
-                text=random.choice(self.placeholder_messages)
+                text=random.choice(self.placeholder_messages),
+                fg="#666666",  # Reset to default gray
+                bg="#2b2b2b",  # Reset to default background
             )
             self.empty_state_overlay.place(relx=0.5, rely=0.4, anchor="center")
+
+    def show_recording_overlay(self):
+        """Show recording state with red box overlay"""
+        # Hide other overlays
+        self.empty_state_overlay.place_forget()
+        self.processing_overlay.place_forget()
+
+        # Reset recording label to normal recording state
+        self.recording_label.config(
+            text="🎤 Recording... (release Tab to stop)",
+            fg="#ff9999",  # Normal red color
+        )
+
+        # Show recording overlay covering most of the text area
+        self.recording_overlay.place(x=10, y=10, relwidth=0.97, relheight=0.85)
+
+    def show_recording_tail_overlay(self):
+        """Show recording tail state (finishing up recording)"""
+        # Update the recording label to show tail state
+        self.recording_label.config(
+            text="🎤 Finishing recording...",
+            fg="#ffaa99",  # Slightly dimmer red to indicate tail period
+        )
+
+        # Keep the recording overlay visible
+        self.recording_overlay.place(x=10, y=10, relwidth=0.97, relheight=0.85)
+
+    def show_processing_overlay(self):
+        """Show processing state with blue box overlay"""
+        # Hide other overlays
+        self.empty_state_overlay.place_forget()
+        self.recording_overlay.place_forget()
+
+        # Show processing overlay covering most of the text area
+        self.processing_overlay.place(x=10, y=10, relwidth=0.97, relheight=0.85)
 
     def show_tooltip(self, event=None):
         """Show tooltip with hotkey information"""
@@ -752,6 +867,14 @@ Keep it brief and helpful."""
                 print("DEBUG: Tab re-pressed within debounce window - continuing hold")
             # This is a quick re-press, treat as continued hold
             self.tab_physically_pressed = True
+
+            # If we're in tail period, cancel it and go back to normal recording
+            if self.recording_tail_active:
+                self.recording_tail_active = False
+                self.show_recording_overlay()
+                if config.debug_mode:
+                    print("DEBUG: Cancelled recording tail - back to normal recording")
+
             return "break"
 
         # Handle first press of physical key or new press after debounce period
@@ -805,8 +928,34 @@ Keep it brief and helpful."""
     def check_tab_release_final(self):
         """Check if tab is still released after debounce period"""
         if not self.tab_physically_pressed and self.recording_mode:
-            # Tab is still released after debounce - stop recording
+            # Tab is still released after debounce - start recording tail period
+            self.recording_tail_active = True
+
+            if config.debug_mode:
+                print(
+                    f"DEBUG: Starting recording tail period ({self.recording_tail_time:.1f}s)"
+                )
+
+            # Update overlay to show we're in tail period
+            self.show_recording_tail_overlay()
+
+            # Schedule actual stop after tail period
+            self.root.after(
+                int(self.recording_tail_time * 1000), self.stop_recording_tail
+            )
+
+    def stop_recording_tail(self):
+        """Stop recording after tail period expires"""
+        if self.recording_tail_active and not self.tab_physically_pressed:
+            # Tab is still released after tail period - actually stop recording
+            self.recording_tail_active = False
             self.process_tab_release()
+        elif self.tab_physically_pressed:
+            # Tab was re-pressed during tail period - cancel tail and continue recording
+            self.recording_tail_active = False
+            if config.debug_mode:
+                print("DEBUG: Tab re-pressed during tail period - continuing recording")
+            self.show_recording_overlay()  # Go back to normal recording state
 
     def process_tab_release(self):
         """Process the actual tab release"""
@@ -860,12 +1009,18 @@ Keep it brief and helpful."""
         # Audio feedback: play start sound
         self.play_sound(self.sound_record_start)
 
-        # Visual feedback: change border color to indicate recording
-        self.text.configure(
-            highlightthickness=2,
-            highlightcolor="#ff4444",  # Red border
-            highlightbackground="#ff4444",
-        )
+        # Visual feedback: show recording overlay
+        self.show_recording_overlay()
+
+        # Start actual voice recording
+        success = self.voice_recorder.start_recording()
+        if not success:
+            if config.debug_mode:
+                print(
+                    "DEBUG: Failed to start voice recording - falling back to text mode"
+                )
+            self.stop_voice_recording()
+            return
 
         if config.debug_mode:
             print("DEBUG: Voice recording started")
@@ -880,22 +1035,26 @@ Keep it brief and helpful."""
         # Audio feedback: play stop sound
         self.play_sound(self.sound_record_stop)
 
-        # Remove visual feedback
-        self.text.configure(highlightthickness=0)
+        # Stop recording and get audio data
+        audio_data = self.voice_recorder.stop_recording()
 
-        # For now, just insert placeholder text
-        cursor_pos = self.text.index("insert")
-        placeholder_text = "[Voice recorded - transcription would go here]"
-        self.text.insert("insert", placeholder_text)
-        new_cursor_pos = self.text.index("insert")
-        current_text = self.text.get("1.0", "end-1c")
+        if audio_data is not None and len(audio_data) > 0:
+            # Show processing overlay
+            self.show_processing_overlay()
 
-        if config.debug_mode:
-            print("DEBUG: Voice recording stopped - INSERTED PLACEHOLDER")
-            print(f"DEBUG: Inserted: '{placeholder_text}'")
-            print(f"DEBUG: Cursor moved from {cursor_pos} to {new_cursor_pos}")
-            print(f"DEBUG: Text content now: '{repr(current_text)}'")
-            print(f"DEBUG: Text length: {len(current_text)}")
+            # Start transcription
+            self.transcription_service.transcribe_async(audio_data)
+
+            if config.debug_mode:
+                print(
+                    f"DEBUG: Voice recording stopped - {len(audio_data)} audio samples captured"
+                )
+        else:
+            # No audio captured, just update to normal empty state
+            self.update_empty_state()
+
+            if config.debug_mode:
+                print("DEBUG: Voice recording stopped - no audio data captured")
 
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()
@@ -917,6 +1076,61 @@ Keep it brief and helpful."""
                 f.write(note_text)
 
         self.root.destroy()
+
+    # Voice recording and transcription callbacks
+    def on_voice_recording_start(self):
+        """Callback when voice recording starts"""
+        if config.debug_mode:
+            print("DEBUG: Voice recording started (callback)")
+
+    def on_voice_recording_stop(self):
+        """Callback when voice recording stops"""
+        if config.debug_mode:
+            print("DEBUG: Voice recording stopped (callback)")
+
+    def on_transcription_start(self):
+        """Callback when transcription starts"""
+        if config.debug_mode:
+            print("DEBUG: Transcription started")
+
+    def on_transcription_complete(self, transcribed_text):
+        """Callback when transcription completes successfully"""
+        if config.debug_mode:
+            print(f"DEBUG: Transcription completed: '{transcribed_text}'")
+
+        # Insert transcribed text and update overlay
+        def update_text():
+            if transcribed_text.strip():
+                # Smart spacing: add space if needed
+                cursor_pos = self.text.index("insert")
+                text_to_insert = transcribed_text.strip()
+
+                # Check if we need to add a space before the transcribed text
+                if cursor_pos != "1.0":  # Not at the beginning of the text
+                    char_before = self.text.get(f"{cursor_pos}-1c", cursor_pos)
+                    if char_before and char_before not in [" ", "\n", "\t"]:
+                        text_to_insert = " " + text_to_insert
+
+                self.text.insert("insert", text_to_insert)
+
+            # Update empty state overlay
+            self.update_empty_state()
+
+        # Update UI in main thread
+        self.root.after(0, update_text)
+
+    def on_transcription_error(self, error_message):
+        """Callback when transcription fails"""
+        if config.debug_mode:
+            print(f"DEBUG: Transcription error: {error_message}")
+
+        # Just update overlay back to normal state on error
+        def update_text():
+            # Don't insert error text, just reset to normal empty state
+            self.update_empty_state()
+
+        # Update UI in main thread
+        self.root.after(0, update_text)
 
     def run(self):
         self.ensure_focus()  # Ensure focus when starting

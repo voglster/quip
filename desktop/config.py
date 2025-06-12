@@ -47,6 +47,14 @@ class QuipConfig:
                 "temperature": 0.7,
                 "improve_prompt": "This is a quick note that needs improvement. Fix spelling, grammar, and clarity while preserving the original meaning and intent. Return only the improved text without explanations or additions:",
             },
+            "voice": {
+                "enabled": True,
+                "model_size": "base",
+                "language": "auto",
+                "hold_threshold_ms": 200,
+                "audio_feedback": True,
+                "recording_tail_ms": 400,
+            },
         }
 
     def _ensure_config_dir(self):
@@ -222,6 +230,36 @@ class QuipConfig:
             "improve_prompt",
             "This is a quick note that needs improvement. Fix spelling, grammar, and clarity while preserving the original meaning and intent. Return only the improved text without explanations or additions:",
         )
+
+    @property
+    def voice_enabled(self) -> bool:
+        """Get voice recording enabled setting"""
+        return self.get("voice", "enabled", True)
+
+    @property
+    def voice_model_size(self) -> str:
+        """Get voice model size"""
+        return self.get("voice", "model_size", "base")
+
+    @property
+    def voice_language(self) -> str:
+        """Get voice language setting"""
+        return self.get("voice", "language", "auto")
+
+    @property
+    def voice_hold_threshold_ms(self) -> int:
+        """Get voice hold threshold in milliseconds"""
+        return self.get("voice", "hold_threshold_ms", 200)
+
+    @property
+    def voice_audio_feedback(self) -> bool:
+        """Get voice audio feedback setting"""
+        return self.get("voice", "audio_feedback", True)
+
+    @property
+    def voice_recording_tail_ms(self) -> int:
+        """Get voice recording tail duration in milliseconds"""
+        return self.get("voice", "recording_tail_ms", 400)
 
 
 # Global config instance
