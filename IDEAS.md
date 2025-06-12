@@ -1,79 +1,36 @@
-# Ideas & Future Improvements
+# Quip Ideas & Future Features
 
-This file captures ideas for improving Quip's user experience and functionality.
+## Potential Improvements
 
-## UI/UX Enhancements
+### Configuration
+- Move the notes file path to a config in the system section
 
-### Information Overlay
-- **Low contrast info icon** in bottom corner
-  - Shows on hover: "About Quip" + keyboard shortcuts
-  - Shortcuts: `Esc` to quit, `Ctrl+Enter`/`Ctrl+D` to save & exit
-  - Minimal, unobtrusive design that doesn't interfere with typing
+### Enhanced Input
+- Voice recording integration with whisper.cpp
+- Dictation mode with speech-to-text
 
-### Visual Improvements
-- **True rounded corners** (investigate OS-level window properties)
-- **Better multi-monitor centering** (detect primary monitor accurately)
-- **Subtle animations** for window appearance/disappearance
-- **Theme customization** (light mode, custom colors)
+### AI Integration  
+- Optional LLM cleanup with local Ollama
+- Smart text formatting and grammar correction
+- Auto-categorization of notes
 
-## Functionality Ideas
+### User Experience
+- Custom themes and color schemes
+- Window animations and transitions
+- Notification system for reminders
 
-### Input Methods
-- **Voice recording support** with speech-to-text
-- **Markdown shortcuts** (auto-formatting as you type)
-- **Quick templates** (meeting notes, todos, etc.)
+### Advanced Features
+- Multiple note categories/tags
+- Search functionality across saved notes
+- Export options (PDF, markdown, etc.)
+- Plugin architecture for extensions
 
-### AI Integration
-- **Optional LLM cleanup** with local Ollama
-- **Smart categorization** of notes
-- **Auto-tagging** based on content
+## Implementation Notes
 
-### System Integration
-- **Global hotkey** to spawn from anywhere
-- **System tray integration**
-- **Auto-updates** via GitHub releases
-- **Cross-platform launcher** scripts
+Keep all additions **optional** and maintain the core philosophy:
+- Frictionless thought capture
+- Minimal cognitive overhead  
+- Instant availability (< 2 second spawn)
+- No interruption to workflow
 
-## Technical Improvements
-
-### Configuration & Debugging
-- **Config file support** - Store preferences in `~/.config/quip/config.toml`
-  - Window size, position preferences
-  - Theme customization (colors, fonts)
-  - Default save location
-  - Hotkey bindings
-- **Debug mode** - CLI flag (`--debug`) and/or config option
-  - Monitor detection logging
-  - Window positioning details
-  - Focus management diagnostics
-- **Settings UI** - Simple overlay for config management
-  - Toggle debug mode
-  - Adjust window size/transparency
-  - Change themes and colors
-
-### Performance
-- **Faster startup time**
-- **Memory optimization**
-- **Background service** option
-
-### Storage
-- **Note organization** beyond simple inbox
-- **Search functionality** across all notes
-- **Export options** (PDF, various formats)
-
----
-
-## Contributing Ideas
-
-To add new ideas:
-1. Add to appropriate section above
-2. Include brief description and rationale
-3. Mark priority level if relevant (High/Medium/Low)
-4. Reference any related GitHub issues
-
-## Process
-
-Ideas should be:
-- **Specific enough** to be actionable
-- **Aligned with** the core philosophy of frictionless capture
-- **Considerate of** the minimal, unobtrusive design goal
+Priority should always be given to speed and simplicity over feature richness.
