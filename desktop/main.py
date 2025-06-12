@@ -144,6 +144,63 @@ class QuickNote:
         )
         self.text.pack(fill="both", expand=True)
 
+        # Random placeholder messages with personality
+        self.placeholder_messages = [
+            "What's on your mind?",
+            "Spill the tea...",
+            "Your thoughts are safe with me",
+            "What are you scheming?",
+            "Drop your wisdom here",
+            "Tell me your secrets",
+            "What's brewing in there?",
+            "Share your brain dump",
+            "I'm all ears... well, pixels",
+            "Whisper your ideas to me",
+            "What's the latest gossip?",
+            "Pour your heart out",
+            "Hit me with your best thought",
+            "What's rattling around up there?",
+            "Feed me your thoughts",
+            "I promise I won't judge",
+            "What's the word?",
+            "Penny for your thoughts?",
+            "What's keeping you up?",
+            "Let's hear it, genius",
+        ]
+
+        # Create overlay for empty state message
+        import random
+
+        self.empty_state_overlay = tk.Label(
+            main_frame,
+            text=random.choice(self.placeholder_messages),
+            font=("Helvetica", 16, "italic"),
+            fg="#666666",
+            bg=bg_color,
+            justify="center",
+        )
+        # Position overlay in center of text area
+        self.empty_state_overlay.place(relx=0.5, rely=0.4, anchor="center")
+
+        # Create info icon frame (positioned in bottom right)
+        self.info_frame = tk.Frame(main_frame, bg=bg_color)
+        self.info_frame.pack(side="bottom", anchor="se", pady=(0, 2))
+
+        # Create info icon
+        self.info_icon = tk.Label(
+            self.info_frame,
+            text="ⓘ",
+            font=("Helvetica", 12),
+            fg="#666666",  # Subtle gray
+            bg=bg_color,
+            cursor="hand2",
+        )
+        self.info_icon.pack()
+
+        # Create tooltip (initially hidden)
+        self.tooltip = None
+        self.tooltip_window = None
+
         # Create curator feedback area (initially hidden)
         self.curator_frame = tk.Frame(main_frame, bg=bg_color)
 
@@ -189,6 +246,14 @@ class QuickNote:
         self.text.bind("<Control-z>", self.undo_improvement)
         self.text.bind("<Control-l>", self.toggle_curator_mode)
         self.text.bind("<Escape>", lambda e: self.root.destroy())
+
+        # Bind text change events to update empty state overlay
+        self.text.bind("<KeyRelease>", self.update_empty_state)
+        self.text.bind("<Button-1>", self.update_empty_state)
+
+        # Bind tooltip events
+        self.info_icon.bind("<Enter>", self.show_tooltip)
+        self.info_icon.bind("<Leave>", self.hide_tooltip)
 
         # Show window after everything is configured
         self.root.deiconify()
@@ -264,6 +329,68 @@ class QuickNote:
         self.root.focus_force()  # Force focus to the window
         self.text.focus_set()  # Set focus to the text widget
 
+    def update_empty_state(self, event=None):
+        """Update empty state overlay visibility based on text content"""
+        current_text = self.text.get("1.0", "end-1c").strip()
+        if current_text:
+            # Hide overlay when there's text
+            self.empty_state_overlay.place_forget()
+        else:
+            # Show overlay when text is empty with a fresh random message
+            import random
+
+            self.empty_state_overlay.config(
+                text=random.choice(self.placeholder_messages)
+            )
+            self.empty_state_overlay.place(relx=0.5, rely=0.4, anchor="center")
+
+    def show_tooltip(self, event=None):
+        """Show tooltip with hotkey information"""
+        if self.tooltip_window:
+            return
+
+        x = self.info_icon.winfo_rootx() + 20
+        y = self.info_icon.winfo_rooty() - 150
+
+        self.tooltip_window = tk.Toplevel(self.root)
+        self.tooltip_window.wm_overrideredirect(True)
+        self.tooltip_window.wm_geometry(f"+{x}+{y}")
+
+        # Create tooltip content
+        tooltip_text = "Hotkeys:\n"
+        tooltip_text += "• Ctrl+Enter / Ctrl+D — Save and exit\n"
+        tooltip_text += "• Ctrl+S — Open settings\n"
+        if config.llm_enabled:
+            tooltip_text += "• Ctrl+I — Improve with AI\n"
+            tooltip_text += "• Ctrl+L — Curator feedback\n"
+            tooltip_text += "• Ctrl+Z — Undo improvement\n"
+        tooltip_text += "• Escape — Exit without saving"
+
+        # Add LLM status
+        llm_status = "✅ AI enabled" if config.llm_enabled else "⚠️ AI disabled"
+        tooltip_text += f"\n\n{llm_status}"
+
+        self.tooltip = tk.Label(
+            self.tooltip_window,
+            text=tooltip_text,
+            font=("Helvetica", 10),
+            bg="#1a1a1a",
+            fg="#ffffff",
+            relief="solid",
+            borderwidth=1,
+            padx=8,
+            pady=6,
+            justify="left",
+        )
+        self.tooltip.pack()
+
+    def hide_tooltip(self, event=None):
+        """Hide tooltip"""
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
+            self.tooltip = None
+
     def open_settings(self, event=None):
         """Open settings file in default editor and close Quip"""
         try:
@@ -294,6 +421,9 @@ class QuickNote:
         # Restore the text before improvement
         self.text.delete("1.0", "end")
         self.text.insert("1.0", self.text_before_improvement)
+
+        # Update empty state overlay
+        self.update_empty_state()
 
         # Clear the stored text (only allow one undo)
         self.text_before_improvement = None
@@ -347,6 +477,9 @@ class QuickNote:
 
             # Restore original styling
             self.text.configure(bg=original_bg, insertbackground=original_cursor)
+
+            # Update empty state overlay
+            self.update_empty_state()
 
             # Clear curator mode after improvement
             self.clear_curator_mode()
@@ -535,6 +668,8 @@ Keep it brief and helpful."""
 
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()
+
+        # Save if there's actual text content
         if note_text:
             # Get save path from config
             notes_file_path = Path(config.save_path)
