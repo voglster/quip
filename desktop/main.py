@@ -217,6 +217,26 @@ class QuickNote:
         self.root.focus_force()  # Force focus to the window
         self.text.focus_set()  # Set focus to the text widget
 
+    def open_settings(self, event=None):
+        """Open settings file in default editor and close Quip"""
+        try:
+            import subprocess
+
+            # Open config file with default editor
+            subprocess.Popen(
+                ["xdg-open", str(config.config_file_path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if config.debug_mode:
+                print(f"Opening settings: {config.config_file_path}")
+        except Exception as e:
+            if config.debug_mode:
+                print(f"Failed to open settings: {e}")
+
+        # Close current Quip window so fresh config loads on next spawn
+        self.root.destroy()
+
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()
         if note_text:
