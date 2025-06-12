@@ -18,12 +18,15 @@ Quip is a **frictionless thought capture tool** - Press hotkey → capture thoug
 
 ## Development Direction
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) and [README.md](README.md) for complete roadmap. Priority improvements:
+See [DEVELOPMENT.md](DEVELOPMENT.md) and [README.md](README.md) for complete roadmap and tasks.
 
+**Always check DEVELOPMENT.md for current tasks and todos before starting work.**
+
+Priority improvements:
 1. **Borderless overlay UI** - Remove window decorations, true HUD experience
 2. **Global hotkey system** - Spawn from anywhere, not just when focused
-3. **Optional LLM cleanup** - Integrate with local Ollama for note clarification
-4. **Easy installation** - One-liner GitHub release installer
+3. **Easy installation + auto-updates** - One-liner GitHub installer with seamless update checking
+4. **Optional LLM cleanup** - Integrate with local Ollama for note clarification
 5. **Voice recording** - Speech-to-text integration
 
 ## Running the Application

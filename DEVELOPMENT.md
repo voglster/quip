@@ -32,7 +32,21 @@
 - [ ] Configurable hotkey (default suggestion: Ctrl+Shift+Space)
 - [ ] Cross-platform hotkey handling
 
-### 3. Optional LLM Cleanup
+### 3. Easy Installation + Auto-Updates
+**Priority: High**
+- [ ] GitHub release-based installer script
+- [ ] One-liner: `curl -sSL raw.githubusercontent.com/user/quip/main/install.sh | bash`
+- [ ] Handles uv installation if needed
+- [ ] Cross-platform support (Linux primary, macOS secondary)
+- [ ] Easy to share with friends
+- [ ] **Auto-update system**:
+  - [ ] Check GitHub releases API for newer versions
+  - [ ] Background update checking (configurable frequency)
+  - [ ] Seamless reinstall/upgrade process
+  - [ ] Option to disable auto-updates
+  - [ ] Update notifications in UI (subtle, non-intrusive)
+
+### 4. Optional LLM Cleanup
 **Priority: High**
 - [ ] Integration with local Ollama (OpenAI-compatible API)
 - [ ] Second hotkey while in Quip to request cleanup (e.g., Ctrl+L)
@@ -41,21 +55,13 @@
 - [ ] User can accept/reject suggestions
 - [ ] 90% of time: just save and go; 10%: cleanup first
 
-### 4. Voice Recording Integration
+### 5. Voice Recording Integration
 **Priority: Medium**
 - [ ] Hotkey to start recording (opens Quip + starts recording)
 - [ ] Speech-to-text transcription into text field
 - [ ] Integration with existing nerd dictation setup
 - [ ] Local processing preferred (whisper.cpp or similar)
 - [ ] Can edit transcription before saving
-
-### 5. Easy Installation
-**Priority: High**
-- [ ] GitHub release-based installer script
-- [ ] One-liner: `curl -sSL raw.githubusercontent.com/user/quip/main/install.sh | bash`
-- [ ] Handles uv installation if needed
-- [ ] Cross-platform support (Linux primary, macOS secondary)
-- [ ] Easy to share with friends
 
 ## Technical Approach
 
@@ -85,9 +91,15 @@
 ## Implementation Order
 1. **Borderless UI experiment** - Test different approaches for minimal window
 2. **Global hotkey** - Make it accessible from anywhere
-3. **LLM integration** - Add optional cleanup capability
-4. **Installation script** - Make it portable and shareable
+3. **Installation + auto-update system** - Make it portable, shareable, and self-updating
+4. **LLM integration** - Add optional cleanup capability
 5. **Voice recording** - Add speech input option
+
+## Current Tasks
+- [ ] Implement borderless overlay UI (remove window decorations)
+- [ ] Add global hotkey support for system-wide spawning
+- [ ] Create GitHub release-based installer with auto-update checking
+- [ ] Test different UI frameworks for better overlay experience
 
 ## Non-Goals
 - Complex note organization (separate project handles this)
