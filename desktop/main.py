@@ -140,6 +140,7 @@ class QuickNote:
         # Bind events
         self.text.bind("<Control-Return>", self.save_and_exit)
         self.text.bind("<Control-d>", self.save_and_exit)
+        self.text.bind("<Control-s>", self.open_settings)
         self.text.bind("<Escape>", lambda e: self.root.destroy())
 
         # Show window after everything is configured
