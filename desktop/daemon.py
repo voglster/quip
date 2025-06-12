@@ -4,12 +4,14 @@ import sys
 import signal
 import subprocess
 import time
+import threading
 from pathlib import Path
 from pynput import keyboard
 from typing import Optional
 
 from config import config
 from config_watcher import ConfigWatcher
+from updater import UpdateChecker
 
 
 class QuipDaemon:
@@ -23,6 +25,9 @@ class QuipDaemon:
     def spawn_quip(self):
         """Spawn the main Quip application"""
         try:
+            # Check for updates in background (async, non-blocking)
+            self.check_updates_async()
+
             # Get the path to the quip executable
             quip_cmd = sys.executable
             quip_module = str(Path(__file__).parent / "main.py")
@@ -40,6 +45,25 @@ class QuipDaemon:
 
         except Exception as e:
             print(f"Error spawning Quip: {e}")
+
+    def check_updates_async(self):
+        """Check for updates in background without blocking Quip spawn"""
+
+        def update_check():
+            try:
+                updater = UpdateChecker()
+                update_info = updater.check_for_updates()
+                if update_info:
+                    if config.debug_mode:
+                        print(f"🎉 Update available: v{update_info['version']}")
+                        print("Run 'quip --update' to upgrade")
+                    # Could write to a status file or send notification here
+            except Exception:
+                # Silently fail - don't interrupt user experience
+                pass
+
+        # Run in background thread - don't block the hotkey response
+        threading.Thread(target=update_check, daemon=True).start()
 
     def cleanup_llm(self):
         """Placeholder for LLM cleanup functionality"""

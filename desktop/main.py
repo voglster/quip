@@ -241,6 +241,31 @@ class QuickNote:
 
 
 def main():
+    import sys
+
+    # Handle CLI arguments
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--update":
+            from updater import UpdateChecker
+
+            updater = UpdateChecker()
+            success = updater.perform_update()
+            sys.exit(0 if success else 1)
+        elif sys.argv[1] == "--check-update":
+            from updater import UpdateChecker
+
+            updater = UpdateChecker()
+            update_info = updater.check_for_updates()
+            if update_info:
+                print(updater.update_available_message(update_info))
+            else:
+                print("✅ Quip is up to date")
+            sys.exit(0)
+        elif sys.argv[1] == "--version":
+            print("Quip v0.1.0")
+            sys.exit(0)
+
+    # Normal GUI mode
     app = QuickNote()
     app.run()
 

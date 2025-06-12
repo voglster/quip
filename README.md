@@ -19,10 +19,10 @@ Quip is built for those moments when an idea pops into your head and you need to
 
 ```bash
 # Quick install (coming soon)
-curl -sSL https://raw.githubusercontent.com/yourusername/quip/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/voglster/quip/main/install.sh | bash
 
 # Manual install
-git clone https://github.com/yourusername/quip.git
+git clone https://github.com/voglster/quip.git
 cd quip/desktop
 uv sync
 uv run quip
