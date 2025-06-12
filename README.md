@@ -11,6 +11,8 @@ Quip is built for those moments when an idea pops into your head and you need to
 ## Current Features
 
 - **Instant capture**: Global hotkey spawns a minimal overlay
+- **AI-powered improvement**: Ctrl+I improves text with local or cloud LLMs
+- **Undo support**: Ctrl+Z restores original text after AI improvements
 - **Dark theme**: Easy on the eyes during late-night inspiration
 - **Automatic save**: Notes go to `~/notes/5. Inbox/Inbox.md`
 - **Zero friction**: Escape to dismiss, Ctrl+Enter to save
@@ -38,10 +40,60 @@ uv run quip
 
 ## Usage
 
-1. Press your configured hotkey (default: `Ctrl+Shift+Space`)
+1. Press your configured hotkey (default: `Win+Space`)
 2. Type your thought
-3. Press `Ctrl+Enter` to save, or `Escape` to dismiss
-4. Continue with what you were doing
+3. Press `Ctrl+I` to improve with AI (optional)
+4. Press `Ctrl+Z` to undo improvements if needed
+5. Press `Ctrl+Enter` to save, or `Escape` to dismiss
+6. Continue with what you were doing
+
+## LLM Configuration
+
+Quip supports AI-powered note improvement with various providers. Configure in `~/.config/quip/config.toml`:
+
+### OpenAI (GPT-4, GPT-3.5)
+```toml
+[llm]
+enabled = true
+base_url = "https://api.openai.com/v1"
+model = "gpt-4o-mini"
+api_key = "sk-your-openai-api-key"
+timeout_seconds = 30
+max_tokens = 1000
+temperature = 0.7
+improve_prompt = "Fix spelling, grammar, and clarity while preserving meaning. Return only the improved text:"
+```
+
+### Google Gemini
+```toml
+[llm]
+enabled = true
+base_url = "https://generativelanguage.googleapis.com/v1beta"
+model = "gemini-1.5-flash"
+api_key = "your-gemini-api-key"
+timeout_seconds = 30
+max_tokens = 1000
+temperature = 0.7
+improve_prompt = "Fix spelling, grammar, and clarity while preserving meaning. Return only the improved text:"
+```
+
+### Local Ollama
+```toml
+[llm]
+enabled = true
+base_url = "http://localhost:11434/v1"
+model = "llama3.2:3b"
+api_key = ""
+timeout_seconds = 30
+max_tokens = 1000
+temperature = 0.7
+improve_prompt = "Fix spelling, grammar, and clarity while preserving meaning. Return only the improved text:"
+```
+
+**Hotkeys:**
+- `Ctrl+I` - Improve note with AI
+- `Ctrl+Z` - Undo last improvement
+- `Ctrl+S` - Open settings file
 
 ## Planned Improvements
 
