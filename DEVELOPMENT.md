@@ -4,7 +4,7 @@
 
 ## Current State
 
-✅ **Feature-Complete v0.5.2**
+✅ **Feature-Complete v0.5.3**
 - Python/tkinter desktop app with borderless overlay
 - Global hotkey system (Win+Space) with background daemon
 - TOML-based configuration with file watching and auto-reload
@@ -15,6 +15,9 @@
 - Core hotkeys: `Ctrl+Enter`/`Ctrl+D` to save, `Escape` to exit, `Ctrl+S` for settings
 - **Curator mode**: `Ctrl+L` for interactive note improvement with LLM feedback
 - **Context-aware improvements**: `Ctrl+I` uses curator feedback for better results
+- **UI Discoverability**: Random personality-driven placeholders, info icon with contextual tooltips
+- **Empty state messaging**: 20 fun variations like "Spill the tea...", "What are you scheming?"
+- **Smart help system**: Hover ⓘ icon for hotkeys, adapts to LLM configuration
 - Python package with `uv` dependency management
 - One-liner installer with autostart support
 
@@ -24,20 +27,28 @@
 - **Unobtrusive design** - Overlay/HUD element, not a traditional window
 - **Optional enhancement** - LLM cleanup available but not required
 
+## Recently Completed (v0.5.3)
+
+✅ **UI Polish & Discoverability**
+- Added subtle info icon (ⓘ) in bottom right corner with hover functionality
+- Implemented contextual tooltip showing available hotkeys and LLM status
+- Created personality-driven empty state messaging with 20 random variations
+- Added visual feedback for LLM enabled/disabled state in tooltips
+- Made curator mode and LLM features discoverable to new users
+- Maintained clean, minimal design that doesn't clutter the interface
+- Smart overlay system that disappears when typing, reappears when empty
+
 ## Active Priorities
 
-### 1. UI Polish & Discoverability
-- Add subtle info icon (circle with "i") in bottom right corner
-- Hover tooltip showing available hotkeys and features
-- Empty state messaging ("Start typing your thought...") for new users
-- Visual feedback for LLM enabled/disabled state
-- Make curator mode and LLM features discoverable to new users
-- Clean, minimal design that doesn't clutter the interface
-
-### 2. Voice Recording Integration
+### 1. Voice Recording Integration
 - Speech-to-text integration (whisper.cpp preferred)
 - Hotkey to start recording mode
 - Edit transcription before saving
+
+### 2. Performance & Polish
+- Optimize startup time and memory usage
+- Improve window positioning edge cases
+- Enhanced error handling and recovery
 
 ## Technical Notes
 
