@@ -4,7 +4,7 @@
 
 ## Current State
 
-✅ **Feature-Complete v0.4.4**
+✅ **Feature-Complete v0.5.2**
 - Python/tkinter desktop app with borderless overlay
 - Global hotkey system (Win+Space) with background daemon
 - TOML-based configuration with file watching and auto-reload
@@ -13,6 +13,8 @@
 - Configurable: window size, transparency, save path, debug mode
 - Saves notes to configurable path (default: `~/notes/5. Inbox/Inbox.md`)
 - Core hotkeys: `Ctrl+Enter`/`Ctrl+D` to save, `Escape` to exit, `Ctrl+S` for settings
+- **Curator mode**: `Ctrl+L` for interactive note improvement with LLM feedback
+- **Context-aware improvements**: `Ctrl+I` uses curator feedback for better results
 - Python package with `uv` dependency management
 - One-liner installer with autostart support
 
@@ -24,12 +26,7 @@
 
 ## Active Priorities
 
-### 1. Optional LLM Cleanup
-- Integration with local Ollama (OpenAI-compatible API)
-- Second hotkey for cleanup while in Quip (e.g., Ctrl+L)
-- Fast, non-blocking operation with accept/reject
-
-### 2. Voice Recording Integration
+### 1. Voice Recording Integration
 - Speech-to-text integration (whisper.cpp preferred)
 - Hotkey to start recording mode
 - Edit transcription before saving
