@@ -4,11 +4,14 @@
 
 ## Current State
 
-✅ **Working Prototype** (v0.2)
+✅ **Feature-Complete v0.3**
 - Python/tkinter desktop app with borderless overlay
-- Dark theme with clean UI (no borders/decorations)
+- Global hotkey system (Win+Space) with background daemon
+- TOML-based configuration with file watching and auto-reload
 - Multi-monitor support with xrandr detection
-- Saves notes to `~/notes/5. Inbox/Inbox.md`
+- Dark theme with clean UI (no flash, no borders)
+- Configurable: window size, transparency, save path, debug mode
+- Saves notes to configurable path (default: `~/notes/5. Inbox/Inbox.md`)
 - Core hotkeys: `Ctrl+Enter`/`Ctrl+D` to save, `Escape` to exit
 - Python package with `uv` dependency management
 
@@ -28,12 +31,12 @@
 - [x] Using tkinter splash window type for borderless effect
 - [x] Keep stdlib-only approach (no CustomTkinter dependency)
 
-### 2. Global Hotkey Integration  
-**Priority: Critical**
-- [ ] System-level hotkey to spawn Quip from anywhere
-- [ ] Works regardless of current application focus
-- [ ] Configurable hotkey (default suggestion: Ctrl+Shift+Space)
-- [ ] Cross-platform hotkey handling
+### 2. Global Hotkey Integration ✅ **COMPLETED**
+- [x] System-level hotkey to spawn Quip from anywhere
+- [x] Works regardless of current application focus
+- [x] Configurable hotkey with user-friendly syntax (win+space)
+- [x] Background daemon with auto-reload on config changes
+- [x] File watching for instant configuration updates
 
 ### 3. Easy Installation + Auto-Updates
 **Priority: High**
@@ -97,9 +100,10 @@
 5. **Voice recording** - Add speech input option
 
 ## Next Priority Tasks
-- [ ] Add global hotkey support for system-wide spawning
-- [ ] Create basic configuration system (debug mode, basic settings)
 - [ ] Create GitHub release-based installer with auto-update checking
+- [ ] Add auto-start daemon on system boot (systemd service)
+- [ ] Implement LLM integration with Ollama for note cleanup
+- [ ] Add voice recording with speech-to-text
 
 ## Non-Goals
 - Complex note organization (separate project handles this)
