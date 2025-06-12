@@ -126,10 +126,14 @@ X-GNOME-Autostart-enabled=true
 StartupNotify=false
 EOF
         
-        # Start the daemon immediately
-        echo "🚀 Starting daemon..."
-        "$BIN_DIR/quip-daemon" start &
-        sleep 1
+        # Start the daemon immediately if not already running
+        if ! pgrep -f "quip-daemon" > /dev/null; then
+            echo "🚀 Starting daemon..."
+            "$BIN_DIR/quip-daemon" start &
+            sleep 1
+        else
+            echo "🔄 Daemon already running"
+        fi
         
         echo "✅ Desktop autostart file created and daemon started"
         echo "🔧 Manage via: System Settings → Startup Applications"

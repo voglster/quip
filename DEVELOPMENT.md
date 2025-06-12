@@ -71,4 +71,9 @@
 - Rich text editing
 - Plugin architecture
 
+## Ideas for Future
+- Hotkey while Quip is open (Ctrl+S?) to open default editor on settings file
+- Voice recording integration with whisper.cpp
+- Optional LLM cleanup with local Ollama
+
 Keep it focused on instant thought capture.
