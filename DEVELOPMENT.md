@@ -26,7 +26,13 @@
 
 ## Active Priorities
 
-### 1. Voice Recording Integration
+### 1. UI Polish & Discoverability
+- Add subtle info icon (circle with "i") in bottom right corner
+- Hover tooltip showing available hotkeys and features
+- Make curator mode and LLM features discoverable to new users
+- Clean, minimal design that doesn't clutter the interface
+
+### 2. Voice Recording Integration
 - Speech-to-text integration (whisper.cpp preferred)
 - Hotkey to start recording mode
 - Edit transcription before saving
