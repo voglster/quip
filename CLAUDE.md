@@ -68,6 +68,7 @@ uv run pre-commit run --all-files
 - Always run pre-commit hooks before committing
 - Use imperative mood ("add" not "added")
 - Be descriptive but concise
+- **DO NOT** include Claude Code attribution in commit messages
 
 ## Key Controls
 
