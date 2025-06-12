@@ -164,3 +164,7 @@ Desktop.ini
 # Quip specific
 notes/
 .quip/
+
+# Vosk models (large files, downloaded separately)
+desktop/vosk-models/
+**/*vosk-model*/

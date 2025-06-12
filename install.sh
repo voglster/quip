@@ -92,6 +92,33 @@ else
     uv sync
 fi
 
+# Download voice models if needed
+echo "🎤 Setting up voice recognition..."
+MODELS_DIR="$INSTALL_DIR/desktop/vosk-models"
+EN_MODEL_DIR="$MODELS_DIR/vosk-model-small-en-us-0.15"
+
+if [ ! -d "$EN_MODEL_DIR" ]; then
+    echo "📥 Downloading voice recognition model (39MB)..."
+    mkdir -p "$MODELS_DIR"
+    cd "$MODELS_DIR"
+    
+    # Download English model
+    if ! curl -L "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip" -o "vosk-model-small-en-us-0.15.zip"; then
+        echo "⚠️  Voice model download failed - voice recording will use mock transcription"
+        echo "   You can manually download from: https://alphacephei.com/vosk/models"
+        echo "   and extract to: $MODELS_DIR"
+    else
+        echo "📦 Extracting voice model..."
+        unzip -q "vosk-model-small-en-us-0.15.zip"
+        rm "vosk-model-small-en-us-0.15.zip"
+        echo "✅ Voice recognition model installed"
+    fi
+    
+    cd "$INSTALL_DIR/desktop"
+else
+    echo "✅ Voice recognition model already installed"
+fi
+
 # Create launcher script
 echo "🔗 Creating launcher..."
 cat > "$BIN_DIR/quip" << 'EOF'
@@ -233,6 +260,7 @@ echo "   quip-daemon start    # Start background daemon with global hotkey"
 echo "   quip-daemon stop     # Stop background daemon"
 echo ""
 echo "📁 Notes saved to: ~/notes/5. Inbox/Inbox.md"
-echo "🔥 Global hotkey: Ctrl+Shift+Space (when daemon is running)"
+echo "🔥 Global hotkey: Win+Space (when daemon is running)"
+echo "🎤 Voice recording: Hold Tab to record, release to transcribe"
 echo ""
 echo "Need help? Check: https://github.com/voglster/quip"

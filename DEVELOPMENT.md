@@ -4,7 +4,7 @@
 
 ## Current State
 
-✅ **Feature-Complete v0.5.3**
+✅ **Feature-Complete v0.6.1**
 - Python/tkinter desktop app with borderless overlay
 - Global hotkey system (Win+Space) with background daemon
 - TOML-based configuration with file watching and auto-reload
@@ -27,7 +27,7 @@
 - **Unobtrusive design** - Overlay/HUD element, not a traditional window
 - **Optional enhancement** - LLM cleanup available but not required
 
-## Recently Completed (v0.5.3)
+## Recently Completed (v0.6.1)
 
 ✅ **UI Polish & Discoverability**
 - Added subtle info icon (ⓘ) in bottom right corner with hover functionality
