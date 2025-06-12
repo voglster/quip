@@ -72,7 +72,7 @@ class QuickNote:
             x, y, w, h = monitor["x"], monitor["y"], monitor["width"], monitor["height"]
             if config.debug_mode:
                 print(
-                    f"DEBUG: Checking if cursor ({pointer_x}, {pointer_y}) is in monitor {monitor['name']}: x={x}-{x+w}, y={y}-{y+h}"
+                    f"DEBUG: Checking if cursor ({pointer_x}, {pointer_y}) is in monitor {monitor['name']}: x={x}-{x + w}, y={y}-{y + h}"
                 )
             if x <= pointer_x < x + w and y <= pointer_y < y + h:
                 current_monitor = monitor
