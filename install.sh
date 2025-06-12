@@ -71,7 +71,11 @@ echo "⬇️  Downloading Quip..."
 if [ -d "$INSTALL_DIR" ]; then
     echo "🔄 Updating existing installation..."
     cd "$INSTALL_DIR"
+    # Stash any local changes (like uv.lock) before pulling
+    git stash push -m "Installer auto-stash $(date)"
     git pull origin main
+    # Try to apply stash, but don't fail if it conflicts
+    git stash pop || echo "ℹ️  Some local changes were stashed due to conflicts"
 else
     git clone https://github.com/voglster/quip.git "$INSTALL_DIR"
     cd "$INSTALL_DIR"
