@@ -126,8 +126,14 @@ X-GNOME-Autostart-enabled=true
 StartupNotify=false
 EOF
         
-        echo "✅ Desktop autostart file created"
+        # Start the daemon immediately
+        echo "🚀 Starting daemon..."
+        "$BIN_DIR/quip-daemon" start &
+        sleep 1
+        
+        echo "✅ Desktop autostart file created and daemon started"
         echo "🔧 Manage via: System Settings → Startup Applications"
+        echo "🎯 Test hotkey: Win+Space"
         
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS LaunchAgent
