@@ -109,34 +109,25 @@ chmod +x "$BIN_DIR/quip" "$BIN_DIR/quip-daemon"
 if [[ "$ENABLE_AUTOSTART" == "true" ]]; then
     echo "⚡ Setting up autostart..."
     
-    if command -v systemctl &> /dev/null; then
-        # Create systemd user service
-        SYSTEMD_DIR="$HOME/.config/systemd/user"
-        mkdir -p "$SYSTEMD_DIR"
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Create desktop autostart file for Linux
+        AUTOSTART_DIR="$HOME/.config/autostart"
+        mkdir -p "$AUTOSTART_DIR"
         
-        cat > "$SYSTEMD_DIR/quip-daemon.service" << EOF
-[Unit]
-Description=Quip Daemon - Global hotkey handler for thought capture
-After=graphical-session.target
-
-[Service]
-Type=simple
-ExecStart=$BIN_DIR/quip-daemon start
-Restart=on-failure
-RestartSec=5
-Environment=DISPLAY=:0
-
-[Install]
-WantedBy=graphical-session.target
+        cat > "$AUTOSTART_DIR/quip-daemon.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Name=Quip Daemon
+Comment=Global hotkey handler for thought capture
+Exec=$BIN_DIR/quip-daemon start
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
 EOF
         
-        # Enable and start the service
-        systemctl --user daemon-reload
-        systemctl --user enable quip-daemon.service
-        systemctl --user start quip-daemon.service
-        
-        echo "✅ Systemd service created and started"
-        echo "🔧 Manage with: systemctl --user {start|stop|status} quip-daemon"
+        echo "✅ Desktop autostart file created"
+        echo "🔧 Manage via: System Settings → Startup Applications"
         
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS LaunchAgent
