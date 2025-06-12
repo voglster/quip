@@ -2,7 +2,7 @@
 set -e
 
 # Quip - Frictionless thought capture tool installer
-# Usage: curl -sSL https://raw.githubusercontent.com/yourusername/quip/main/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/voglster/quip/main/install.sh | bash
 # Options:
 #   --autostart    Enable daemon autostart (systemd service)
 #   --no-autostart Skip autostart setup
