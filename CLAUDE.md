@@ -2,25 +2,37 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Project Vision
 
-Quip is a minimal quick-note GUI application built with Python's tkinter. It creates a centered, dark-themed text input window that saves notes to `~/notes/5. Inbox/Inbox.md`.
+Quip is a **frictionless thought capture tool** - Press hotkey → capture thought → back to work.
 
-## Key Architecture
+**Core Philosophy**: Minimize cognitive overhead. This should feel like an extension of your brain, not a separate app. 90% of the time: type → save → continue. 10% of the time: type → AI cleanup → save → continue.
 
-- **Single-file application**: All functionality is contained in `main.py`
+## Current State & Architecture
+
+- **Monorepo structure**: `desktop/`, `mobile/`, `web/`, `server/`, `shared/` components
+- **Desktop app**: Single-file Python app in `desktop/main.py`
 - **Note storage**: Saves to `~/notes/5. Inbox/Inbox.md` with `---` delimiter between entries
-- **GUI behavior**: Creates topmost, dialog-type window with focus management for Linux/GNOME environments
+- **GUI**: Centered, dark-themed tkinter window with focus management for Linux/GNOME
+- **Simple but functional**: Works, but needs to become truly unobtrusive overlay
+
+## Development Direction
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) and [README.md](README.md) for complete roadmap. Priority improvements:
+
+1. **Borderless overlay UI** - Remove window decorations, true HUD experience
+2. **Global hotkey system** - Spawn from anywhere, not just when focused
+3. **Optional LLM cleanup** - Integrate with local Ollama for note clarification
+4. **Easy installation** - One-liner GitHub release installer
+5. **Voice recording** - Speech-to-text integration
 
 ## Running the Application
 
-With uv:
+Desktop app:
 ```bash
+cd desktop
 uv run quip
-```
-
-Or directly:
-```bash
+# or
 uv run python main.py
 ```
 
@@ -28,8 +40,34 @@ uv run python main.py
 
 Install dependencies and set up the project:
 ```bash
-uv sync
+cd desktop
+uv sync --group dev
+uv run pre-commit install
 ```
+
+## Development Process
+
+**Always run pre-commit hooks before committing:**
+```bash
+cd desktop
+uv run ruff check desktop/ --fix
+uv run ruff format desktop/
+uv run pre-commit run --all-files
+```
+
+**Use Conventional Commits for clean history:**
+- `feat:` - New features (e.g., "feat: add global hotkey support")
+- `fix:` - Bug fixes (e.g., "fix: window focus on GNOME")
+- `refactor:` - Code improvements (e.g., "refactor: extract UI components")
+- `docs:` - Documentation (e.g., "docs: update installation guide")
+- `style:` - Formatting only (e.g., "style: fix ruff warnings")
+- `chore:` - Maintenance (e.g., "chore: update dependencies")
+
+**Commit Guidelines:**
+- Keep commits small and focused on single changes
+- Always run pre-commit hooks before committing
+- Use imperative mood ("add" not "added")
+- Be descriptive but concise
 
 ## Key Controls
 

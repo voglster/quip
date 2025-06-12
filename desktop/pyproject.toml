@@ -5,6 +5,12 @@ description = "A minimal quick-note GUI application"
 requires-python = ">=3.8"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "ruff",
+    "pre-commit",
+]
+
 [project.scripts]
 quip = "main:main"
 
