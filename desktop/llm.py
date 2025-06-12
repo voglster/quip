@@ -98,7 +98,7 @@ class LLMClient:
             print(f"DEBUG LLM: Full request: {request_data}")
 
         try:
-            response = self._make_request("v1/chat/completions", request_data)
+            response = self._make_request("chat/completions", request_data)
 
             if config.debug_mode:
                 print(f"DEBUG LLM: Raw response: {response}")
@@ -160,7 +160,7 @@ class LLMClient:
         }
 
         try:
-            response = self._make_request("v1/chat/completions", request_data)
+            response = self._make_request("chat/completions", request_data)
 
             if "choices" not in response or not response["choices"]:
                 raise LLMError("No response choices returned from API")

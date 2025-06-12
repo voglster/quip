@@ -39,8 +39,8 @@ class QuipConfig:
             },
             "llm": {
                 "enabled": False,
-                "base_url": "http://10.0.6.16:11434",
-                "model": "LoTUs5494/mistral-small-3.1:latest",
+                "base_url": "http://localhost:11434/v1",
+                "model": "llama3.2:3b",
                 "api_key": "",
                 "timeout_seconds": 30,
                 "max_tokens": 1000,
