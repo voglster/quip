@@ -33,6 +33,10 @@ class QuipConfig:
             },
             "notes": {"save_path": "~/notes/5. Inbox/Inbox.md"},
             "system": {"auto_install_hotkeys": True},
+            "updates": {
+                "auto_update_check": True,
+                "check_interval_hours": 1,
+            },
         }
 
     def _ensure_config_dir(self):
@@ -154,6 +158,16 @@ class QuipConfig:
     def config_file_path(self) -> Path:
         """Get path to config file"""
         return self.config_file
+
+    @property
+    def auto_update_check(self) -> bool:
+        """Get auto update check setting"""
+        return self.get("updates", "auto_update_check", True)
+
+    @property
+    def check_interval_hours(self) -> int:
+        """Get update check interval in hours"""
+        return self.get("updates", "check_interval_hours", 1)
 
 
 # Global config instance

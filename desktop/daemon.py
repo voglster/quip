@@ -51,14 +51,27 @@ class QuipDaemon:
 
         def update_check():
             try:
+                # Check if auto-update checking is enabled
+                if not config.auto_update_check:
+                    if config.debug_mode:
+                        print("Auto-update checking disabled in config")
+                    return
+
                 updater = UpdateChecker()
-                update_info = updater.check_for_updates()
+                # Use the configured check interval
+                update_info = updater.check_for_updates(
+                    check_interval_hours=config.check_interval_hours
+                )
                 if update_info:
                     if config.debug_mode:
                         print(f"🎉 Update available: v{update_info['version']}")
                         print("Run 'quip --update' to upgrade")
                     # Could write to a status file or send notification here
-            except Exception:
+                elif config.debug_mode:
+                    print("No updates available or rate limited")
+            except Exception as e:
+                if config.debug_mode:
+                    print(f"Update check failed: {e}")
                 # Silently fail - don't interrupt user experience
                 pass
 
