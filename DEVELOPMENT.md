@@ -31,22 +31,17 @@
 - **Easy Installation** - One-liner installer with auto-update system
 - **GitHub Releases** - Automated releases, CLI update commands
 - **SSPL License** - Prevents commercial hosting abuse
+- **Autostart System** - Desktop autostart files for reliable GUI daemon startup
+- **Settings Hotkey** - Ctrl+S while Quip open to edit config in default editor
 
 ## Active Priorities
 
-### 1. Fix Autostart System ⚠️ **URGENT**
-**See [AUTOSTART.md](AUTOSTART.md) for complete implementation details**
-
-**Problem**: Current systemd service can't access GUI (X11/Wayland permissions)  
-**Solution**: Use standard desktop autostart entry (`.desktop` file)  
-**Status**: Daemon works manually, autostart needs desktop file approach
-
-### 2. Optional LLM Cleanup
+### 1. Optional LLM Cleanup
 - Integration with local Ollama (OpenAI-compatible API)
 - Second hotkey for cleanup while in Quip (e.g., Ctrl+L)
 - Fast, non-blocking operation with accept/reject
 
-### 3. Voice Recording Integration
+### 2. Voice Recording Integration
 - Speech-to-text integration (whisper.cpp preferred)
 - Hotkey to start recording mode
 - Edit transcription before saving
