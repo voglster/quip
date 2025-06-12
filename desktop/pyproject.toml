@@ -3,7 +3,12 @@ name = "quip"
 version = "0.1.0"
 description = "A minimal quick-note GUI application"
 requires-python = ">=3.8"
-dependencies = []
+dependencies = [
+    "watchdog>=3.0.0",
+    "pynput>=1.7.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+    "tomli-w>=1.0.0",
+]
 
 [dependency-groups]
 dev = [
@@ -13,6 +18,7 @@ dev = [
 
 [project.scripts]
 quip = "main:main"
+quip-daemon = "daemon:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -3,6 +3,8 @@ from pathlib import Path
 import subprocess
 import re
 
+from config import config
+
 note_delimiter = "---"
 
 
@@ -33,7 +35,7 @@ class QuickNote:
         try:
             # Some window managers support rounded corners via window properties
             self.root.wm_attributes(
-                "-alpha", 0.98
+                "-alpha", config.transparency
             )  # Slight transparency can help with antialiasing
         except tk.TclError:
             pass
@@ -43,8 +45,8 @@ class QuickNote:
         fg_color = "#ffffff"
 
         # Set window size and position (centered on primary monitor)
-        window_width = 800
-        window_height = 150
+        window_width = config.window_width
+        window_height = config.window_height
 
         # Get monitor dimensions and find current monitor
         self.root.update_idletasks()  # Ensure window is ready
@@ -56,10 +58,19 @@ class QuickNote:
         # Try to detect actual monitor configuration using xrandr
         monitors = self.detect_monitors()
 
+        if config.debug_mode:
+            print(f"DEBUG: screen_width={screen_width}, screen_height={screen_height}")
+            print(f"DEBUG: pointer x={pointer_x}, pointer y={pointer_y}")
+            print(f"DEBUG: Detected monitors: {monitors}")
+
         # Find which monitor the cursor is on
         current_monitor = None
         for monitor in monitors:
             x, y, w, h = monitor["x"], monitor["y"], monitor["width"], monitor["height"]
+            if config.debug_mode:
+                print(
+                    f"DEBUG: Checking if cursor ({pointer_x}, {pointer_y}) is in monitor {monitor['name']}: x={x}-{x+w}, y={y}-{y+h}"
+                )
             if x <= pointer_x < x + w and y <= pointer_y < y + h:
                 current_monitor = monitor
                 break
@@ -202,12 +213,13 @@ class QuickNote:
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()
         if note_text:
-            # Create directory if it doesn't exist
-            notes_dir = Path.home() / "notes" / "5. Inbox"
+            # Get save path from config
+            notes_file_path = Path(config.save_path)
+            notes_dir = notes_file_path.parent
             notes_dir.mkdir(parents=True, exist_ok=True)
 
             # Append to file with newlines
-            notes_file = notes_dir / "Inbox.md"
+            notes_file = notes_file_path
             with open(notes_file, "a", encoding="utf-8") as f:
                 if notes_file.exists() and notes_file.stat().st_size > 0:
                     f.write(
