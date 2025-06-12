@@ -106,6 +106,13 @@ class VoskEngine(TranscriptionEngine):
             Path("/usr/share/vosk"),
             Path("/opt/vosk"),
             Path.cwd() / "vosk-models",
+            Path(__file__).parent / "vosk-models",  # Look next to this script
+            Path.home()
+            / ".local"
+            / "share"
+            / "quip"
+            / "desktop"
+            / "vosk-models",  # Installed location
         ]
 
         # Look for English models first, then any model
