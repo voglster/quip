@@ -133,6 +133,17 @@ EOF
             sleep 1
         else
             echo "🔄 Daemon already running"
+            echo ""
+            read -p "Kill and restart daemon with new version? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                echo "🔄 Restarting daemon..."
+                pkill -f "quip-daemon" || true
+                sleep 1
+                "$BIN_DIR/quip-daemon" start &
+                sleep 1
+                echo "✅ Daemon restarted"
+            fi
         fi
         
         echo "✅ Desktop autostart file created and daemon started"

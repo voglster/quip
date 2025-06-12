@@ -73,6 +73,7 @@
 
 ## Ideas for Future
 - Hotkey while Quip is open (Ctrl+S?) to open default editor on settings file
+- Move the notes file path to a config in the system section
 - Voice recording integration with whisper.cpp
 - Optional LLM cleanup with local Ollama
 

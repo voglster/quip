@@ -67,8 +67,6 @@ class QuipDaemon:
                         print(f"🎉 Update available: v{update_info['version']}")
                         print("Run 'quip --update' to upgrade")
                     # Could write to a status file or send notification here
-                elif config.debug_mode:
-                    print("No updates available or rate limited")
             except Exception as e:
                 if config.debug_mode:
                     print(f"Update check failed: {e}")
