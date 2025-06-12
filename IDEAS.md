@@ -19,6 +19,17 @@
 - Window animations and transitions
 - Notification system for reminders
 
+### UI Polish Ideas
+**Medium Priority:**
+- Subtle curator mode expand/collapse animations
+- Auto-save drafts if user accidentally closes
+- Graceful LLM timeout handling with better error messaging
+
+**Lower Priority:**
+- First-time onboarding tooltip sequence
+- Visual loading states and spinners
+- Offline mode messaging and handling
+
 ### Advanced Features
 - Multiple note categories/tags
 - Search functionality across saved notes

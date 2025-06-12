@@ -29,6 +29,8 @@
 ### 1. UI Polish & Discoverability
 - Add subtle info icon (circle with "i") in bottom right corner
 - Hover tooltip showing available hotkeys and features
+- Empty state messaging ("Start typing your thought...") for new users
+- Visual feedback for LLM enabled/disabled state
 - Make curator mode and LLM features discoverable to new users
 - Clean, minimal design that doesn't clutter the interface
 
