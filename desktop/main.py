@@ -1,5 +1,7 @@
 import tkinter as tk
 from pathlib import Path
+import subprocess
+import re
 
 note_delimiter = "---"
 
@@ -44,30 +46,51 @@ class QuickNote:
         window_width = 800
         window_height = 150
 
-        # Get the primary monitor dimensions
+        # Get monitor dimensions and find current monitor
         self.root.update_idletasks()  # Ensure window is ready
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
+        pointer_x = self.root.winfo_pointerx()
+        pointer_y = self.root.winfo_pointery()
 
-        # For multi-monitor setups, use winfo_width/height of root to get primary monitor
-        # Center on primary monitor (assume primary is left-most at 0,0)
-        primary_width = self.root.winfo_vrootwidth() // max(
-            1, screen_width // 1920
-        )  # Rough estimate
-        primary_height = self.root.winfo_vrootheight() // max(
-            1, screen_height // 1080
-        )  # Rough estimate
+        # Try to detect actual monitor configuration using xrandr
+        monitors = self.detect_monitors()
 
-        # Fallback: just use the first monitor's typical dimensions
-        if primary_width > 3840:  # Multi-monitor detected
-            primary_width = 1920  # Assume standard monitor width
-            primary_height = 1080  # Assume standard monitor height
+        # Find which monitor the cursor is on
+        current_monitor = None
+        for monitor in monitors:
+            x, y, w, h = monitor["x"], monitor["y"], monitor["width"], monitor["height"]
+            if x <= pointer_x < x + w and y <= pointer_y < y + h:
+                current_monitor = monitor
+                break
+
+        if current_monitor:
+            monitor_start_x = current_monitor["x"]
+            monitor_start_y = current_monitor["y"]
+            monitor_width = current_monitor["width"]
+            monitor_height = current_monitor["height"]
         else:
-            primary_width = screen_width
-            primary_height = screen_height
+            # Cursor is in a gap between monitors or monitor not detected
+            # Try to infer monitor size and position based on cursor location
+            if len(monitors) >= 2 and screen_width > 4000:
+                # Multi-monitor setup with gaps - estimate monitor size
+                typical_width = 2560  # Common monitor width
+                estimated_monitor = pointer_x // typical_width
+                monitor_start_x = estimated_monitor * typical_width
+                monitor_start_y = 0
+                monitor_width = typical_width
+                monitor_height = screen_height
+            else:
+                # Fallback to simple centering across all screens
+                monitor_width = screen_width
+                monitor_height = screen_height
+                monitor_start_x = 0
+                monitor_start_y = 0
 
-        center_x = int(primary_width / 2 - window_width / 2)
-        center_y = int(primary_height / 2 - window_height / 2)
+        # Center on the current monitor
+        center_x = monitor_start_x + int(monitor_width / 2 - window_width / 2)
+        center_y = monitor_start_y + int(monitor_height / 2 - window_height / 2)
+
         self.root.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
 
         # Configure the root window background
@@ -110,6 +133,65 @@ class QuickNote:
 
         # Bind window manager delete window protocol
         self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
+
+    def detect_monitors(self):
+        """Detect monitor configuration using xrandr on Linux"""
+        try:
+            # Try xrandr first (most common on Linux)
+            result = subprocess.run(
+                ["xrandr"], capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0:
+                return self.parse_xrandr_output(result.stdout)
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+
+        # Fallback: return single monitor based on tkinter values
+        return [
+            {
+                "name": "default",
+                "x": 0,
+                "y": 0,
+                "width": self.root.winfo_screenwidth(),
+                "height": self.root.winfo_screenheight(),
+            }
+        ]
+
+    def parse_xrandr_output(self, output):
+        """Parse xrandr output to get monitor positions and sizes"""
+        monitors = []
+        lines = output.split("\n")
+
+        for line in lines:
+            # Look for lines like: "DP-2 connected 2560x1440+2560+0" or "DP-4 connected primary 2560x1440+1920+0"
+            match = re.search(
+                r"^(\S+)\s+connected\s+(?:primary\s+)?(\d+)x(\d+)\+(\d+)\+(\d+)", line
+            )
+            if match:
+                name, width, height, x, y = match.groups()
+                monitors.append(
+                    {
+                        "name": name,
+                        "x": int(x),
+                        "y": int(y),
+                        "width": int(width),
+                        "height": int(height),
+                    }
+                )
+
+        return (
+            monitors
+            if monitors
+            else [
+                {
+                    "name": "default",
+                    "x": 0,
+                    "y": 0,
+                    "width": self.root.winfo_screenwidth(),
+                    "height": self.root.winfo_screenheight(),
+                }
+            ]
+        )
 
     def ensure_focus(self):
         """Ensure window has proper focus"""
