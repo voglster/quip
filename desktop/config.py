@@ -24,7 +24,7 @@ class QuipConfig:
     def _get_default_config(self) -> Dict[str, Any]:
         """Return default configuration values"""
         return {
-            "hotkeys": {"spawn": "<cmd>+space", "cleanup": "<ctrl>+<shift>+l"},
+            "hotkeys": {"spawn": "win+space", "cleanup": "ctrl+shift+l"},
             "ui": {
                 "debug": False,
                 "window_width": 800,
