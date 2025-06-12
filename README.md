@@ -106,6 +106,49 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) for clean histo
 
 Keep commits small, focused, and incremental. Run pre-commit hooks before every commit.
 
+## Contributing
+
+We welcome contributions to Quip! By submitting code to this repository, you agree to the following:
+
+### Contributor License Agreement
+
+**By contributing code to this repository, you:**
+
+1. **Grant full rights**: You assign all rights, title, and interest in your contributions to this repository
+2. **License compatibility**: Your contributions will be licensed under the same SSPL license as the project
+3. **Legal immunity**: You waive any claims against the project maintainers and users regarding your contributions
+4. **Code ownership**: The repository gains full ownership and usage rights to your contributed code
+5. **No revocation**: You cannot later revoke these rights or remove your contributions
+
+### What this means:
+
+- ✅ Your contributions help make Quip better for everyone
+- ✅ The project can evolve freely without legal complications  
+- ✅ All code remains open source under SSPL
+- ❌ You cannot later claim ownership or demand removal of your contributions
+- ❌ You cannot sue the project or users over your contributed code
+
+**By submitting a pull request, you acknowledge that you have read and agree to these terms.**
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes following our coding standards
+4. Run tests and pre-commit hooks: `uv run pre-commit run --all-files`
+5. Commit with conventional commit format: `git commit -m "feat: add amazing feature"`
+6. Push to your fork: `git push origin feature/amazing-feature`
+7. Open a pull request
+
+## License
+
+This project is licensed under the **Server Side Public License (SSPL) v1** - see the [LICENSE](LICENSE) file for details.
+
+**What this means:**
+- ✅ Free to use, modify, and distribute
+- ✅ Must share your modifications under the same license
+- ❌ Cannot host as a commercial service without open-sourcing your entire hosting infrastructure
+
 ## Why Quip?
 
 Because good ideas don't wait for you to open the right app, find the right document, or switch contexts. They appear in the shower, during meetings, while debugging, at 2 AM.
