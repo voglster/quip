@@ -3,6 +3,8 @@ from pathlib import Path
 import subprocess
 import re
 import sys
+import time
+import threading
 
 from config import config
 
@@ -25,6 +27,18 @@ class QuickNote:
         self.current_curator_feedback = (
             None  # Store current curator feedback for context
         )
+
+        # Voice recording state
+        self.tab_press_time = None
+        self.tab_hold_threshold = 0.2  # 200ms threshold
+        self.recording_mode = False
+        self.tab_physically_pressed = False  # Track physical key state
+        self.tab_consumed_as_hold = False  # Track if this press was used for recording
+        self.tab_release_time = None  # Track when tab was released
+        self.release_debounce_time = 0.1  # 100ms debounce for rapid press/release
+
+        # Initialize audio feedback paths
+        self.init_audio()
 
         # Hide window initially to prevent flash
         self.root.withdraw()
@@ -246,6 +260,11 @@ class QuickNote:
         self.text.bind("<Control-z>", self.undo_improvement)
         self.text.bind("<Control-l>", self.toggle_curator_mode)
         self.text.bind("<Escape>", lambda e: self.root.destroy())
+
+        # Bind tab events for voice recording
+        self.text.bind("<KeyPress-Tab>", self.on_tab_press)
+        self.text.bind("<KeyRelease-Tab>", self.on_tab_release)
+        self.text.focus_set()  # Ensure focus for key events
 
         # Bind text change events to update empty state overlay
         self.text.bind("<KeyRelease>", self.update_empty_state)
@@ -665,6 +684,218 @@ Keep it brief and helpful."""
 
             if config.debug_mode:
                 print("DEBUG: Curator mode cleared")
+
+    def init_audio(self):
+        """Initialize audio feedback file paths"""
+        try:
+            sounds_dir = Path(__file__).parent / "sounds"
+            self.sound_record_start = sounds_dir / "record_start.wav"
+            self.sound_record_stop = sounds_dir / "record_stop.wav"
+
+            # Check if sound files exist
+            if self.sound_record_start.exists() and self.sound_record_stop.exists():
+                if config.debug_mode:
+                    print("DEBUG: Audio feedback files found")
+            else:
+                self.sound_record_start = None
+                self.sound_record_stop = None
+                if config.debug_mode:
+                    print("DEBUG: Audio feedback files not found")
+        except Exception as e:
+            self.sound_record_start = None
+            self.sound_record_stop = None
+            if config.debug_mode:
+                print(f"DEBUG: Audio feedback initialization failed: {e}")
+
+    def play_sound(self, sound_path):
+        """Play a sound effect if available"""
+        try:
+            if sound_path and sound_path.exists():
+                # Use threading to avoid blocking the UI
+                def play_audio():
+                    try:
+                        # Try different audio players based on system
+                        subprocess.run(
+                            ["aplay", str(sound_path)],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            timeout=1,
+                        )
+                    except (subprocess.TimeoutExpired, FileNotFoundError):
+                        try:
+                            # Fallback for systems without aplay
+                            subprocess.run(
+                                ["paplay", str(sound_path)],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL,
+                                timeout=1,
+                            )
+                        except (subprocess.TimeoutExpired, FileNotFoundError):
+                            if config.debug_mode:
+                                print("DEBUG: No audio player found (aplay/paplay)")
+
+                threading.Thread(target=play_audio, daemon=True).start()
+        except Exception as e:
+            if config.debug_mode:
+                print(f"DEBUG: Failed to play sound: {e}")
+
+    def on_tab_press(self, event):
+        """Handle Tab key press - start timing for hold detection"""
+        current_time = time.time()
+
+        # Check if this is a quick re-press after a recent release (debounce)
+        if (
+            self.tab_release_time
+            and current_time - self.tab_release_time < self.release_debounce_time
+        ):
+            if config.debug_mode:
+                print("DEBUG: Tab re-pressed within debounce window - continuing hold")
+            # This is a quick re-press, treat as continued hold
+            self.tab_physically_pressed = True
+            return "break"
+
+        # Handle first press of physical key or new press after debounce period
+        if not self.tab_physically_pressed:
+            if config.debug_mode:
+                print("DEBUG: Tab PHYSICALLY pressed (first time)")
+
+            self.tab_press_time = current_time
+            self.tab_physically_pressed = True
+            self.tab_consumed_as_hold = False
+            self.tab_release_time = None  # Clear release time
+
+            # Schedule hold check after threshold
+            self.root.after(int(self.tab_hold_threshold * 1000), self.check_tab_hold)
+        else:
+            # This is a keyboard repeat event - ignore it
+            if config.debug_mode:
+                print("DEBUG: Tab repeat event - ignoring")
+
+        # Prevent default tab insertion for now
+        return "break"
+
+    def on_tab_release(self, event):
+        """Handle Tab key release - determine if it was tap or hold"""
+        current_time = time.time()
+
+        if config.debug_mode:
+            print("DEBUG: Tab PHYSICALLY released")
+
+        if not self.tab_physically_pressed:
+            return
+
+        self.tab_physically_pressed = False
+        self.tab_release_time = current_time  # Record release time for debouncing
+
+        # Don't process release immediately if we're in recording mode
+        # Wait for debounce period to see if it's re-pressed
+        if self.recording_mode:
+            if config.debug_mode:
+                print("DEBUG: Tab released during recording - waiting for debounce")
+            # Schedule a delayed check to see if we should stop recording
+            self.root.after(
+                int(self.release_debounce_time * 1000), self.check_tab_release_final
+            )
+        else:
+            # Process immediate release for short taps
+            self.process_tab_release()
+
+        return "break"
+
+    def check_tab_release_final(self):
+        """Check if tab is still released after debounce period"""
+        if not self.tab_physically_pressed and self.recording_mode:
+            # Tab is still released after debounce - stop recording
+            self.process_tab_release()
+
+    def process_tab_release(self):
+        """Process the actual tab release"""
+        if not self.tab_press_time:
+            return
+
+        hold_duration = time.time() - self.tab_press_time
+
+        if self.recording_mode:
+            # We were recording, stop recording
+            self.stop_voice_recording()
+            if config.debug_mode:
+                print(
+                    f"DEBUG: Completed hold ({hold_duration:.3f}s) - stopped recording"
+                )
+        elif not self.tab_consumed_as_hold and hold_duration < self.tab_hold_threshold:
+            # Quick tap - insert tab character
+            cursor_pos = self.text.index("insert")
+            self.text.insert("insert", "\t")
+            new_cursor_pos = self.text.index("insert")
+            current_text = self.text.get("1.0", "end-1c")
+            if config.debug_mode:
+                print(f"DEBUG: Quick tap ({hold_duration:.3f}s) - INSERTED TAB")
+                print(f"DEBUG: Cursor moved from {cursor_pos} to {new_cursor_pos}")
+                print(f"DEBUG: Text content now: '{repr(current_text)}'")
+                print(f"DEBUG: Text length: {len(current_text)}")
+        else:
+            if config.debug_mode:
+                print(
+                    f"DEBUG: Hold duration {hold_duration:.3f}s - already handled or too long"
+                )
+
+    def check_tab_hold(self):
+        """Check if tab is still being held after threshold"""
+        if not self.tab_physically_pressed or self.recording_mode:
+            return  # Tab was already released or already recording
+
+        if config.debug_mode:
+            print("DEBUG: Tab hold detected - starting recording mode")
+
+        self.tab_consumed_as_hold = True  # Mark this press as consumed by hold
+        self.start_voice_recording()
+
+    def start_voice_recording(self):
+        """Start voice recording mode with visual feedback"""
+        if self.recording_mode:
+            return
+
+        self.recording_mode = True
+
+        # Audio feedback: play start sound
+        self.play_sound(self.sound_record_start)
+
+        # Visual feedback: change border color to indicate recording
+        self.text.configure(
+            highlightthickness=2,
+            highlightcolor="#ff4444",  # Red border
+            highlightbackground="#ff4444",
+        )
+
+        if config.debug_mode:
+            print("DEBUG: Voice recording started")
+
+    def stop_voice_recording(self):
+        """Stop voice recording and process audio"""
+        if not self.recording_mode:
+            return
+
+        self.recording_mode = False
+
+        # Audio feedback: play stop sound
+        self.play_sound(self.sound_record_stop)
+
+        # Remove visual feedback
+        self.text.configure(highlightthickness=0)
+
+        # For now, just insert placeholder text
+        cursor_pos = self.text.index("insert")
+        placeholder_text = "[Voice recorded - transcription would go here]"
+        self.text.insert("insert", placeholder_text)
+        new_cursor_pos = self.text.index("insert")
+        current_text = self.text.get("1.0", "end-1c")
+
+        if config.debug_mode:
+            print("DEBUG: Voice recording stopped - INSERTED PLACEHOLDER")
+            print(f"DEBUG: Inserted: '{placeholder_text}'")
+            print(f"DEBUG: Cursor moved from {cursor_pos} to {new_cursor_pos}")
+            print(f"DEBUG: Text content now: '{repr(current_text)}'")
+            print(f"DEBUG: Text length: {len(current_text)}")
 
     def save_and_exit(self, event):
         note_text = self.text.get("1.0", "end-1c").strip()
