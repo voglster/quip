@@ -4,7 +4,7 @@
 
 ## Current State
 
-✅ **Feature-Complete v0.3**
+✅ **Feature-Complete v0.4.4**
 - Python/tkinter desktop app with borderless overlay
 - Global hotkey system (Win+Space) with background daemon
 - TOML-based configuration with file watching and auto-reload
@@ -12,27 +12,15 @@
 - Dark theme with clean UI (no flash, no borders)
 - Configurable: window size, transparency, save path, debug mode
 - Saves notes to configurable path (default: `~/notes/5. Inbox/Inbox.md`)
-- Core hotkeys: `Ctrl+Enter`/`Ctrl+D` to save, `Escape` to exit
+- Core hotkeys: `Ctrl+Enter`/`Ctrl+D` to save, `Escape` to exit, `Ctrl+S` for settings
 - Python package with `uv` dependency management
+- One-liner installer with autostart support
 
 ## Core Philosophy
 - **Minimize cognitive overhead** - Should feel like an extension of your brain
 - **Instant capture** - Idea pops up → hotkey → type/speak → save → continue
 - **Unobtrusive design** - Overlay/HUD element, not a traditional window
 - **Optional enhancement** - LLM cleanup available but not required
-
-## Priority Improvements
-
-## Completed Features ✅
-
-- **Borderless Overlay UI** - Tkinter splash window, multi-monitor support
-- **Global Hotkey System** - Win+Space spawns from anywhere, configurable
-- **Background Daemon** - File watching, auto-reload config, debug mode
-- **Easy Installation** - One-liner installer with auto-update system
-- **GitHub Releases** - Automated releases, CLI update commands
-- **SSPL License** - Prevents commercial hosting abuse
-- **Autostart System** - Desktop autostart files for reliable GUI daemon startup
-- **Settings Hotkey** - Ctrl+S while Quip open to edit config in default editor
 
 ## Active Priorities
 
