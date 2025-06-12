@@ -9,21 +9,65 @@ class QuickNote:
         self.root = tk.Tk()
         self.root.title("Quip")
 
-        # GNOME/Ubuntu specific window hints
-        self.root.attributes("-type", "dialog")  # Makes it more compact on GNOME
+        # Try different approach for borderless window
+        try:
+            # Linux/X11 specific attributes for borderless window
+            self.root.wm_attributes(
+                "-type", "splash"
+            )  # Splash windows have no decorations
+        except tk.TclError:
+            try:
+                # Alternative approach
+                self.root.wm_attributes(
+                    "-toolwindow", True
+                )  # Tool windows (Windows-specific)
+            except tk.TclError:
+                pass
+
+        # Keep topmost behavior
         self.root.attributes("-topmost", True)
+
+        # Try to add rounded corners (Linux-specific)
+        try:
+            # Some window managers support rounded corners via window properties
+            self.root.wm_attributes(
+                "-alpha", 0.98
+            )  # Slight transparency can help with antialiasing
+        except tk.TclError:
+            pass
 
         # Dark mode colors
         bg_color = "#2b2b2b"
         fg_color = "#ffffff"
 
-        # Set window size and position (centered)
+        # Set window size and position (centered on primary monitor)
         window_width = 800
         window_height = 150
+
+        # Get the primary monitor dimensions
+        self.root.update_idletasks()  # Ensure window is ready
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        center_x = int(screen_width / 2 - window_width / 2)
-        center_y = int(screen_height / 2 - window_height / 2)
+
+        # For multi-monitor setups, use winfo_width/height of root to get primary monitor
+        # Center on primary monitor (assume primary is left-most at 0,0)
+        primary_width = self.root.winfo_vrootwidth() // max(
+            1, screen_width // 1920
+        )  # Rough estimate
+        primary_height = self.root.winfo_vrootheight() // max(
+            1, screen_height // 1080
+        )  # Rough estimate
+
+        # Fallback: just use the first monitor's typical dimensions
+        if primary_width > 3840:  # Multi-monitor detected
+            primary_width = 1920  # Assume standard monitor width
+            primary_height = 1080  # Assume standard monitor height
+        else:
+            primary_width = screen_width
+            primary_height = screen_height
+
+        center_x = int(primary_width / 2 - window_width / 2)
+        center_y = int(primary_height / 2 - window_height / 2)
         self.root.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
 
         # Configure the root window background
@@ -31,9 +75,9 @@ class QuickNote:
 
         # Create a frame for padding
         frame = tk.Frame(self.root, bg=bg_color)
-        frame.pack(fill="both", expand=True, padx=15, pady=15)
+        frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Create and configure the text widget
+        # Create and configure the text widget with minimal padding
         self.text = tk.Text(
             frame,
             font=("Helvetica", 14),
@@ -43,16 +87,17 @@ class QuickNote:
             fg=fg_color,
             insertbackground=fg_color,  # Cursor color
             relief="flat",
-            padx=10,
-            pady=10,
+            padx=8,  # Minimal padding
+            pady=8,
+            bd=0,  # Remove border
         )
         self.text.pack(fill="both", expand=True)
 
-        # Remove the default highlight colors
+        # Remove the default highlight colors and borders
         self.text.configure(
-            highlightthickness=1,
-            highlightbackground="#404040",
-            highlightcolor="#404040",
+            highlightthickness=0,  # Remove highlight border
+            selectbackground="#404040",
+            selectforeground=fg_color,
         )
 
         # Bind events
