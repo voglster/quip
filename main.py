@@ -89,6 +89,9 @@ class QuickNote:
         self.ensure_focus()  # Ensure focus when starting
         self.root.mainloop()
 
-if __name__ == "__main__":
+def main():
     app = QuickNote()
     app.run()
+
+if __name__ == "__main__":
+    main()
