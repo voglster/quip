@@ -97,6 +97,9 @@ class QuipApplication:
 
     def _finalize_setup(self) -> None:
         """Finalize setup and show window."""
+        # Give window manager access to text widget for focus management
+        self.window_manager.text_widget = self.text_widget.text
+
         # Show window after everything is configured
         self.window_manager.show_window()
 
@@ -245,4 +248,5 @@ class QuipApplication:
 
     def run(self) -> None:
         """Start the application main loop."""
+        self.window_manager.ensure_focus()  # Ensure focus when starting
         self.root.mainloop()

@@ -1,7 +1,7 @@
 """Tests for window_manager module."""
 
 import subprocess
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -201,6 +201,19 @@ HDMI-A-1 disconnected (normal left inverted right x axis y axis)"""
 
         window_manager.root.lift.assert_called_once()
         window_manager.root.focus_force.assert_called_once()
+
+    def test_ensure_focus_with_text_widget(self, window_manager):
+        """Test ensuring focus includes text widget focus when available."""
+        # Mock text widget
+        mock_text_widget = Mock()
+        window_manager.text_widget = mock_text_widget
+
+        window_manager.ensure_focus()
+
+        # Should lift window, force focus on window, and focus text widget
+        window_manager.root.lift.assert_called_once()
+        window_manager.root.focus_force.assert_called_once()
+        mock_text_widget.focus_set.assert_called_once()
 
     def test_show_window(self, window_manager):
         """Test showing window."""

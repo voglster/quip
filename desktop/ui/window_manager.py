@@ -243,6 +243,10 @@ class WindowManager:
         self.root.lift()  # Lift the window to the top
         self.root.focus_force()  # Force focus to the window
 
+        # Also focus the text widget if available
+        if hasattr(self, "text_widget") and self.text_widget:
+            self.text_widget.focus_set()
+
     def show_window(self) -> None:
         """Show the window after configuration is complete."""
         self.root.deiconify()
