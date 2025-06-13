@@ -259,19 +259,32 @@ class TestVoiceHandler:
     def test_async_transcription_loading(self, mock_config):
         """Test that transcription service loads asynchronously."""
         import time
+        import threading
 
         with (
             patch("voice.voice_handler.VoiceRecorder"),
             patch("voice.voice_handler.create_transcription_service") as mock_create,
         ):
             mock_transcription = Mock()
+
+            # Create an event to control when the mock initialization completes
+            init_event = threading.Event()
+
+            def slow_initialize_async():
+                """Mock initialize_async that waits for event"""
+                init_event.wait()  # Wait until we signal it's ready
+
+            mock_transcription.initialize_async = slow_initialize_async
             mock_create.return_value = mock_transcription
 
             voice_handler = VoiceHandler()
 
-            # Initially should be loading
+            # Initially should be loading (before we signal completion)
             assert voice_handler.get_transcription_status() == "loading"
             assert not voice_handler.is_transcription_ready()
+
+            # Signal that initialization is complete
+            init_event.set()
 
             # Wait a short time for async loading to complete
             for _ in range(50):  # Max 0.5 seconds

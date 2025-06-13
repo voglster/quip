@@ -402,6 +402,9 @@ class VoiceHandler:
                     model_size=config.voice_model_size, language=config.voice_language
                 )
 
+                # Initialize the transcription service
+                transcription_service.initialize_async()
+
                 # Set up callbacks once loaded
                 transcription_service.on_transcription_start = (
                     self._on_transcription_start_internal
