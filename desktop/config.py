@@ -259,7 +259,7 @@ class QuipConfig:
     @property
     def voice_recording_tail_ms(self) -> int:
         """Get voice recording tail duration in milliseconds"""
-        return self.get("voice", "recording_tail_ms", 400)
+        return self.get("voice", "recording_tail_ms", 300)
 
 
 # Global config instance

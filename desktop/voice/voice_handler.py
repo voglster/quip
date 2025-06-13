@@ -32,9 +32,14 @@ class VoiceHandler:
 
         # Initialize components
         self.voice_recorder = VoiceRecorder()
-        self.transcription_service = create_transcription_service(
-            model_size=config.voice_model_size, language=config.voice_language
-        )
+
+        # Defer transcription service initialization for faster startup
+        self.transcription_service = None
+        self.transcription_loading = False
+        self.transcription_failed = False
+
+        # Start loading transcription service in background
+        self._start_transcription_loading()
 
         # Initialize audio feedback
         self._init_audio_feedback()
@@ -47,11 +52,8 @@ class VoiceHandler:
         self.on_transcription_complete: Optional[Callable[[str], None]] = None
         self.on_transcription_error: Optional[Callable[[str], None]] = None
 
-        # Set up internal callbacks
-        self._setup_callbacks()
-
-        # Initialize transcription service asynchronously
-        self.transcription_service.initialize_async()
+        # Set up internal callbacks for voice recorder
+        self._setup_voice_callbacks()
 
     def _init_audio_feedback(self) -> None:
         """Initialize audio feedback file paths."""
@@ -75,20 +77,10 @@ class VoiceHandler:
             if config.debug_mode:
                 print(f"DEBUG: Audio feedback initialization failed: {e}")
 
-    def _setup_callbacks(self) -> None:
-        """Set up internal callbacks for voice recorder and transcription."""
+    def _setup_voice_callbacks(self) -> None:
+        """Set up internal callbacks for voice recorder."""
         self.voice_recorder.on_recording_start = self._on_voice_recording_start
         self.voice_recorder.on_recording_stop = self._on_voice_recording_stop
-
-        self.transcription_service.on_transcription_start = (
-            self._on_transcription_start_internal
-        )
-        self.transcription_service.on_transcription_complete = (
-            self._on_transcription_complete_internal
-        )
-        self.transcription_service.on_transcription_error = (
-            self._on_transcription_error_internal
-        )
 
     def _play_sound(self, sound_path: Optional[Path]) -> None:
         """Play a sound effect if available."""
@@ -320,17 +312,37 @@ class VoiceHandler:
         audio_data = self.voice_recorder.stop_recording()
 
         if audio_data is not None and len(audio_data) > 0:
-            # Notify UI about transcription start
-            if self.on_transcription_start:
-                self.on_transcription_start()
+            # Check if transcription service is ready
+            if self.transcription_service:
+                # Notify UI about transcription start
+                if self.on_transcription_start:
+                    self.on_transcription_start()
 
-            # Start transcription
-            self.transcription_service.transcribe_async(audio_data)
+                # Start transcription
+                self.transcription_service.transcribe_async(audio_data)
 
-            if config.debug_mode:
-                print(
-                    f"DEBUG: Voice recording stopped - {len(audio_data)} audio samples captured"
-                )
+                if config.debug_mode:
+                    print(
+                        f"DEBUG: Voice recording stopped - {len(audio_data)} audio samples captured"
+                    )
+            elif self.transcription_loading:
+                # Transcription service still loading
+                if self.on_transcription_error:
+                    self.on_transcription_error(
+                        "Transcription service still loading, please try again in a moment"
+                    )
+                if config.debug_mode:
+                    print(
+                        "DEBUG: Voice recording captured but transcription service still loading"
+                    )
+            else:
+                # Transcription service failed to load
+                if self.on_transcription_error:
+                    self.on_transcription_error("Transcription service unavailable")
+                if config.debug_mode:
+                    print(
+                        "DEBUG: Voice recording captured but transcription service unavailable"
+                    )
         else:
             # No audio captured, notify UI
             if self.on_recording_stop:
@@ -372,3 +384,61 @@ class VoiceHandler:
         # Notify external callback
         if self.on_transcription_error:
             self.on_transcription_error(error_message)
+
+    def _start_transcription_loading(self) -> None:
+        """Start loading transcription service in background thread."""
+        if self.transcription_loading or self.transcription_service:
+            return
+
+        self.transcription_loading = True
+
+        def load_transcription():
+            """Background thread function to load Vosk model."""
+            try:
+                if config.debug_mode:
+                    print("DEBUG: Loading transcription service in background...")
+
+                transcription_service = create_transcription_service(
+                    model_size=config.voice_model_size, language=config.voice_language
+                )
+
+                # Set up callbacks once loaded
+                transcription_service.on_transcription_start = (
+                    self._on_transcription_start_internal
+                )
+                transcription_service.on_transcription_complete = (
+                    self._on_transcription_complete_internal
+                )
+                transcription_service.on_transcription_error = (
+                    self._on_transcription_error_internal
+                )
+
+                self.transcription_service = transcription_service
+                self.transcription_loading = False
+
+                if config.debug_mode:
+                    print("DEBUG: Transcription service loaded successfully")
+
+            except Exception as e:
+                self.transcription_loading = False
+                self.transcription_failed = True
+                if config.debug_mode:
+                    print(f"DEBUG: Failed to load transcription service: {e}")
+
+        # Start loading in background thread
+        threading.Thread(target=load_transcription, daemon=True).start()
+
+    def is_transcription_ready(self) -> bool:
+        """Check if transcription service is ready to use."""
+        return self.transcription_service is not None
+
+    def get_transcription_status(self) -> str:
+        """Get current transcription service status."""
+        if self.transcription_service:
+            return "ready"
+        elif self.transcription_loading:
+            return "loading"
+        elif self.transcription_failed:
+            return "failed"
+        else:
+            return "not_started"

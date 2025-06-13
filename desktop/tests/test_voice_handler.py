@@ -255,3 +255,58 @@ class TestVoiceHandler:
         """Test playing non-existent sound file."""
         # Should not raise exception
         voice_handler._play_sound(None)
+
+    def test_async_transcription_loading(self, mock_config):
+        """Test that transcription service loads asynchronously."""
+        import time
+
+        with (
+            patch("voice.voice_handler.VoiceRecorder"),
+            patch("voice.voice_handler.create_transcription_service") as mock_create,
+        ):
+            mock_transcription = Mock()
+            mock_create.return_value = mock_transcription
+
+            voice_handler = VoiceHandler()
+
+            # Initially should be loading
+            assert voice_handler.get_transcription_status() == "loading"
+            assert not voice_handler.is_transcription_ready()
+
+            # Wait a short time for async loading to complete
+            for _ in range(50):  # Max 0.5 seconds
+                if voice_handler.is_transcription_ready():
+                    break
+                time.sleep(0.01)
+
+            # Should be ready after async loading
+            assert voice_handler.get_transcription_status() == "ready"
+            assert voice_handler.is_transcription_ready()
+            assert voice_handler.transcription_service == mock_transcription
+
+    def test_transcription_not_ready_during_recording(self, voice_handler):
+        """Test handling when transcription service isn't ready during recording."""
+        import time
+
+        # Set up recording state
+        voice_handler.recording_mode = True
+        voice_handler.tab_press_time = time.time()
+
+        # Set transcription service to None (not ready)
+        voice_handler.transcription_service = None
+        voice_handler.transcription_loading = True
+
+        # Mock voice recorder to return audio data with length
+        mock_audio_data = [1, 2, 3, 4, 5]  # Mock audio array with length > 0
+        voice_handler.voice_recorder.stop_recording.return_value = mock_audio_data
+
+        # Mock transcription error callback
+        voice_handler.on_transcription_error = Mock()
+
+        # Call stop_voice_recording directly (which is what _process_final_tab_release calls)
+        voice_handler.stop_voice_recording()
+
+        # Should call error callback with loading message
+        voice_handler.on_transcription_error.assert_called_once_with(
+            "Transcription service still loading, please try again in a moment"
+        )
