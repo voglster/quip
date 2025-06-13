@@ -107,6 +107,46 @@ class VoiceHandler:
                 print(f"DEBUG: Failed to load voice recorder: {e}")
             return False
 
+    def start_voice_recorder_background_loading(self) -> None:
+        """Start loading voice recorder in background thread to avoid first-use delay."""
+        if (
+            self.voice_recorder
+            or self.voice_recorder_loading
+            or self.voice_recorder_failed
+        ):
+            return  # Already loaded, loading, or failed
+
+        self.voice_recorder_loading = True
+
+        def load_voice_recorder():
+            """Background thread function to load voice recorder."""
+            try:
+                if config.debug_mode:
+                    print("DEBUG: Loading voice recorder in background...")
+
+                from voice_recorder import VoiceRecorder
+
+                voice_recorder = VoiceRecorder()
+
+                # Set up callbacks
+                voice_recorder.on_recording_start = self._on_voice_recording_start
+                voice_recorder.on_recording_stop = self._on_voice_recording_stop
+
+                self.voice_recorder = voice_recorder
+                self.voice_recorder_loading = False
+
+                if config.debug_mode:
+                    print("DEBUG: Voice recorder loaded successfully in background")
+
+            except Exception as e:
+                self.voice_recorder_loading = False
+                self.voice_recorder_failed = True
+                if config.debug_mode:
+                    print(f"DEBUG: Failed to load voice recorder in background: {e}")
+
+        # Start loading in background thread
+        threading.Thread(target=load_voice_recorder, daemon=True).start()
+
     def _play_sound(self, sound_path: Optional[Path]) -> None:
         """Play a sound effect if available."""
         try:

@@ -351,3 +351,62 @@ class TestVoiceHandler:
                 # Should set up callbacks
                 assert voice_handler.voice_recorder.on_recording_start is not None
                 assert voice_handler.voice_recorder.on_recording_stop is not None
+
+    def test_voice_recorder_background_loading(self, mock_config):
+        """Test that voice recorder can be loaded in background."""
+        import time
+
+        with patch("voice.voice_handler.create_transcription_service"):
+            voice_handler = VoiceHandler()
+
+            # Initially voice recorder should be None
+            assert voice_handler.voice_recorder is None
+            assert not voice_handler.voice_recorder_loading
+            assert not voice_handler.voice_recorder_failed
+
+            # Mock the background loading by patching the import
+            with patch("voice_recorder.VoiceRecorder") as mock_voice_recorder:
+                mock_recorder_instance = Mock()
+                mock_voice_recorder.return_value = mock_recorder_instance
+
+                # Start background loading
+                voice_handler.start_voice_recorder_background_loading()
+
+                # Should be marked as loading
+                assert voice_handler.voice_recorder_loading
+                assert voice_handler.voice_recorder is None
+
+                # Wait for background loading to complete
+                timeout = 2.0  # 2 second timeout
+                start_time = time.time()
+                while (
+                    voice_handler.voice_recorder_loading
+                    and (time.time() - start_time) < timeout
+                ):
+                    time.sleep(0.01)
+
+                # Should have completed loading
+                assert not voice_handler.voice_recorder_loading
+                assert voice_handler.voice_recorder == mock_recorder_instance
+                assert not voice_handler.voice_recorder_failed
+
+                # Should set up callbacks
+                assert voice_handler.voice_recorder.on_recording_start is not None
+                assert voice_handler.voice_recorder.on_recording_stop is not None
+
+    def test_voice_recorder_background_loading_already_loaded(self, mock_config):
+        """Test that background loading does nothing if already loaded."""
+        with patch("voice.voice_handler.create_transcription_service"):
+            voice_handler = VoiceHandler()
+
+            # Pre-load voice recorder
+            mock_recorder = Mock()
+            voice_handler.voice_recorder = mock_recorder
+
+            # Try to start background loading
+            voice_handler.start_voice_recorder_background_loading()
+
+            # Should not change state
+            assert voice_handler.voice_recorder == mock_recorder
+            assert not voice_handler.voice_recorder_loading
+            assert not voice_handler.voice_recorder_failed

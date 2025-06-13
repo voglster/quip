@@ -109,6 +109,9 @@ class QuipApplication:
         # Show initial empty state overlay
         self.text_widget.show_empty_state()
 
+        # Start background loading of voice recorder after UI is settled
+        self.root.after(100, self.voice_handler.start_voice_recorder_background_loading)
+
     # Event handlers
     def _save_and_exit(self, event) -> None:
         """Save note and exit application."""
