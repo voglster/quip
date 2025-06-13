@@ -106,6 +106,9 @@ class QuipApplication:
         # Set initial focus
         self.text_widget.focus_set()
 
+        # Show initial empty state overlay
+        self.text_widget.show_empty_state()
+
     # Event handlers
     def _save_and_exit(self, event) -> None:
         """Save note and exit application."""

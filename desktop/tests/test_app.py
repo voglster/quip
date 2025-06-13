@@ -76,3 +76,13 @@ class TestQuipApplication:
             # Should call ensure_focus before starting mainloop
             mock_window_manager_instance.ensure_focus.assert_called_once()
             mock_tkinter["root"].mainloop.assert_called_once()
+
+    def test_initial_empty_state_shown(self, mock_tkinter, mock_components):
+        """Test that empty state overlay is shown on app startup."""
+        with patch("core.app.config"):
+            QuipApplication()
+
+            mock_text_widget_instance = mock_components["text_widget"].return_value
+
+            # Should call show_empty_state to initialize the overlay
+            mock_text_widget_instance.show_empty_state.assert_called_once()
