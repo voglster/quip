@@ -4,7 +4,7 @@
 
 ## Current State
 
-✅ **Feature-Complete v0.6.4**
+✅ **Feature-Complete v0.6.6**
 - Python/tkinter desktop app with borderless overlay
 - Global hotkey system (Win+Space) with background daemon
 - TOML-based configuration with file watching and auto-reload
@@ -27,9 +27,16 @@
 - **Unobtrusive design** - Overlay/HUD element, not a traditional window
 - **Optional enhancement** - LLM cleanup available but not required
 
-## Recently Completed (v0.6.4)
+## Recently Completed (v0.6.6)
 
-✅ **UI Polish & Discoverability**
+✅ **Voice Recording Performance Enhancement**
+- **Eliminated first-use delay** - Voice recorder now loads in background after UI startup
+- **Instant recording** - First voice recording captures audio immediately without missing beginning
+- **Maintained fast startup** - Background loading preserves 70% startup time improvement
+- Added background threading with graceful fallback handling
+- Comprehensive test coverage for new background loading functionality
+
+✅ **UI Polish & Discoverability** (v0.6.4)
 - Added subtle info icon (ⓘ) in bottom right corner with hover functionality
 - Implemented contextual tooltip showing available hotkeys and LLM status
 - Created personality-driven empty state messaging with 20 random variations
