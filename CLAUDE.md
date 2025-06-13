@@ -11,10 +11,15 @@ Quip is a **frictionless thought capture tool** - Press hotkey → capture thoug
 ## Current State & Architecture
 
 - **Monorepo structure**: `desktop/`, `mobile/`, `web/`, `server/`, `shared/` components
-- **Desktop app**: Single-file Python app in `desktop/main.py`
+- **Desktop app**: Modular Python application with clean, testable architecture
 - **Note storage**: Saves to `~/notes/5. Inbox/Inbox.md` with `---` delimiter between entries
 - **GUI**: Centered, dark-themed tkinter window with focus management for Linux/GNOME
-- **Simple but functional**: Works, but needs to become truly unobtrusive overlay
+- **Refactored Architecture**: Well-organized, maintainable codebase:
+  - `ui/` - UI components (window management, overlays, text widgets)
+  - `core/` - Core application logic (app controller, note management)
+  - `voice/` - Voice recording and transcription handling
+  - `curator/` - LLM functionality and note improvement
+  - `tests/` - Comprehensive test suite with 75+ tests and coverage reporting
 
 ## Development Direction
 
@@ -53,8 +58,9 @@ uv run pre-commit install
 **Always run pre-commit hooks before committing:**
 ```bash
 cd desktop
-uv run ruff check desktop/ --fix
-uv run ruff format desktop/
+uv run ruff check . --fix
+uv run ruff format .
+uv run pytest tests/ --cov=. --cov-fail-under=80
 uv run pre-commit run --all-files
 ```
 
@@ -81,7 +87,23 @@ uv run pre-commit run --all-files
 
 ## Development Notes
 
-- The application uses standard library only (tkinter, pathlib, os)
-- Dark theme colors: background `#2b2b2b`, foreground `#ffffff`
-- Window size: 800x150px, centered on screen
-- GNOME-specific window attributes for proper behavior on Ubuntu/Linux
+- **Architecture**: Clean separation of concerns with modular design
+- **Testing**: Comprehensive test suite with pytest, coverage reporting, and pre-commit integration
+- **Dependencies**: Core app uses standard library (tkinter, pathlib, os) + minimal external deps
+- **Dark theme colors**: background `#2b2b2b`, foreground `#ffffff`
+- **Window size**: 800x150px, centered on screen
+- **GNOME-specific**: Window attributes for proper behavior on Ubuntu/Linux
+
+## Testing
+
+Run the full test suite:
+```bash
+cd desktop
+uv run pytest tests/ -v --cov=. --cov-report=html
+```
+
+Run specific test modules:
+```bash
+uv run pytest tests/test_note_manager.py -v
+uv run pytest tests/test_window_manager.py -v
+```
