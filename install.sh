@@ -101,7 +101,7 @@ if [ ! -d "$EN_MODEL_DIR" ]; then
     echo "📥 Downloading voice recognition model (39MB)..."
     mkdir -p "$MODELS_DIR"
     cd "$MODELS_DIR"
-    
+
     # Download English model
     if ! curl -L "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip" -o "vosk-model-small-en-us-0.15.zip"; then
         echo "⚠️  Voice model download failed - voice recording will use mock transcription"
@@ -113,7 +113,7 @@ if [ ! -d "$EN_MODEL_DIR" ]; then
         rm "vosk-model-small-en-us-0.15.zip"
         echo "✅ Voice recognition model installed"
     fi
-    
+
     cd "$INSTALL_DIR/desktop"
 else
     echo "✅ Voice recognition model already installed"
@@ -138,12 +138,12 @@ chmod +x "$BIN_DIR/quip" "$BIN_DIR/quip-daemon"
 # Set up autostart if requested
 if [[ "$ENABLE_AUTOSTART" == "true" ]]; then
     echo "⚡ Setting up autostart..."
-    
+
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Create desktop autostart file for Linux
         AUTOSTART_DIR="$HOME/.config/autostart"
         mkdir -p "$AUTOSTART_DIR"
-        
+
         cat > "$AUTOSTART_DIR/quip-daemon.desktop" << EOF
 [Desktop Entry]
 Type=Application
@@ -155,7 +155,7 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 StartupNotify=false
 EOF
-        
+
         # Start the daemon immediately if not already running
         if ! pgrep -f "quip-daemon" > /dev/null; then
             echo "🚀 Starting daemon..."
@@ -175,16 +175,16 @@ EOF
                 echo "✅ Daemon restarted"
             fi
         fi
-        
+
         echo "✅ Desktop autostart file created and daemon started"
         echo "🔧 Manage via: System Settings → Startup Applications"
         echo "🎯 Test hotkey: Win+Space"
-        
+
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS LaunchAgent
         LAUNCHAGENTS_DIR="$HOME/Library/LaunchAgents"
         mkdir -p "$LAUNCHAGENTS_DIR"
-        
+
         cat > "$LAUNCHAGENTS_DIR/com.quip.daemon.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -206,19 +206,19 @@ EOF
 </dict>
 </plist>
 EOF
-        
+
         # Load the launch agent
         launchctl load "$LAUNCHAGENTS_DIR/com.quip.daemon.plist"
         launchctl start com.quip.daemon
-        
+
         echo "✅ LaunchAgent created and started"
         echo "🔧 Manage with: launchctl {start|stop} com.quip.daemon"
-        
+
     else
         # Fallback: create desktop autostart entry
         AUTOSTART_DIR="$HOME/.config/autostart"
         mkdir -p "$AUTOSTART_DIR"
-        
+
         cat > "$AUTOSTART_DIR/quip-daemon.desktop" << EOF
 [Desktop Entry]
 Type=Application
@@ -229,7 +229,7 @@ Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
-        
+
         echo "✅ Desktop autostart entry created"
         echo "🔧 Daemon will start automatically on next login"
     fi
@@ -238,7 +238,7 @@ fi
 # Add to PATH if needed
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     echo "📝 Adding $HOME/.local/bin to PATH..."
-    
+
     # Add to appropriate shell config
     if [ -n "$ZSH_VERSION" ]; then
         echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc

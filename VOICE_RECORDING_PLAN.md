@@ -80,7 +80,7 @@ Push-to-talk voice recording with Tab key: Hold Tab → record → release → t
 
 ### Audio Feedback
 - **Start beep**: Rising tone, ~100ms
-- **Stop beep**: Falling tone, ~100ms  
+- **Stop beep**: Falling tone, ~100ms
 - **Implementation**: pygame mixer or playsound library
 
 ## File Structure

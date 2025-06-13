@@ -60,12 +60,12 @@
 
 ## Success Metrics
 - **Speed**: Hotkey to save in < 2 seconds
-- **Invisibility**: Doesn't break flow of current work  
+- **Invisibility**: Doesn't break flow of current work
 - **Reliability**: Always captures thoughts, never loses data
 
 ## Non-Goals
 - Complex note organization (use separate tools)
-- Multiple themes/customization  
+- Multiple themes/customization
 - Sync/cloud features
 - Rich text editing
 - Plugin architecture

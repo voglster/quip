@@ -36,7 +36,7 @@ uvicorn main:app --reload
 ## API Design
 
 - `POST /notes` - Create new note
-- `GET /notes` - List/search notes  
+- `GET /notes` - List/search notes
 - `PUT /notes/{id}` - Update note
 - `POST /notes/{id}/process` - LLM processing
 - `WS /sync` - Real-time synchronization

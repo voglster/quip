@@ -34,7 +34,7 @@ uv run quip
 
 - **[desktop/](desktop/)** - Python tkinter app for instant thought capture
 - **[mobile/](mobile/)** - Expo/React Native mobile companion (planned)
-- **[web/](web/)** - Web interface for note review and management (planned)  
+- **[web/](web/)** - Web interface for note review and management (planned)
 - **[server/](server/)** - Backend API for sync and processing (planned)
 - **[shared/](shared/)** - Common utilities and types (planned)
 
@@ -104,7 +104,7 @@ improve_prompt = "Fix spelling, grammar, and clarity while preserving meaning. R
 - **Voice recording** - Speak your thoughts, get them transcribed
 
 ### Philosophy
-This tool is intentionally minimal. It does one thing well: captures errant thoughts without breaking your concentration. 
+This tool is intentionally minimal. It does one thing well: captures errant thoughts without breaking your concentration.
 
 - 90% of the time: type → save → continue
 - 10% of the time: type → cleanup with AI → save → continue
@@ -149,7 +149,7 @@ git commit -m "feat: add new feature"
 Use [Conventional Commits](https://www.conventionalcommits.org/) for clean history:
 
 - `feat:` - New features
-- `fix:` - Bug fixes  
+- `fix:` - Bug fixes
 - `refactor:` - Code refactoring
 - `docs:` - Documentation changes
 - `style:` - Code style/formatting
@@ -175,7 +175,7 @@ We welcome contributions to Quip! By submitting code to this repository, you agr
 ### What this means:
 
 - ✅ Your contributions help make Quip better for everyone
-- ✅ The project can evolve freely without legal complications  
+- ✅ The project can evolve freely without legal complications
 - ✅ All code remains open source under SSPL
 - ❌ You cannot later claim ownership or demand removal of your contributions
 - ❌ You cannot sue the project or users over your contributed code

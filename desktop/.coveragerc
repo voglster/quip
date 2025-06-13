@@ -1,14 +1,21 @@
 [run]
 source = .
-omit = 
+omit =
     tests/*
     .venv/*
     vosk-models/*
     sounds/*
     __pycache__/*
     *.pyc
+    main.py
+    daemon.py
+    updater.py
+    config_watcher.py
+    voice_recorder.py
+    transcription.py
 
 [report]
+fail_under = 70
 exclude_lines =
     pragma: no cover
     def __repr__

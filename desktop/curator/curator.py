@@ -123,7 +123,7 @@ class CuratorManager:
         """Get curator feedback from LLM."""
         from llm import llm_client, LLMError
 
-        prompt = """You are a thoughtful note-taking curator helping someone capture clear, actionable thoughts. 
+        prompt = """You are a thoughtful note-taking curator helping someone capture clear, actionable thoughts.
 
 This person just captured a quick note. In 2-3 short questions or observations, help them clarify what's important about this note. Be concise and actionable.
 

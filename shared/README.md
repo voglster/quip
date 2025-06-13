@@ -9,7 +9,7 @@ Common functionality used by desktop, mobile, web, and server components.
 ## Planned Contents
 
 - **Types/Schemas**: Note format definitions, API contracts
-- **Utilities**: Date formatting, text processing helpers  
+- **Utilities**: Date formatting, text processing helpers
 - **Constants**: File paths, delimiters, configuration defaults
 - **Validation**: Note format validation, sanitization
 
@@ -27,7 +27,7 @@ Language-specific shared modules:
 ```
 shared/
 ├── python/          # Python utilities (desktop/server)
-├── typescript/      # TypeScript utilities (mobile/web)  
+├── typescript/      # TypeScript utilities (mobile/web)
 ├── config/          # Shared configuration
 └── schemas/         # API/data schemas
 ```

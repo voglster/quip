@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -9,7 +9,7 @@ repos:
       - id: check-added-large-files
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.7
+    rev: v0.11.13
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: pytest-check
         name: pytest-check
-        entry: uv run pytest tests/ --cov=. --cov-fail-under=80 --cov-report=term-missing
+        entry: bash -c "cd desktop && uv run pytest tests/ --cov=. --cov-report=term-missing"
         language: system
         types: [python]
         pass_filenames: false

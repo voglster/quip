@@ -9,7 +9,7 @@
 - Voice recording integration with whisper.cpp
 - Dictation mode with speech-to-text
 
-### AI Integration  
+### AI Integration
 - Optional LLM cleanup with local Ollama
 - Smart text formatting and grammar correction
 - Auto-categorization of notes
@@ -40,7 +40,7 @@
 
 Keep all additions **optional** and maintain the core philosophy:
 - Frictionless thought capture
-- Minimal cognitive overhead  
+- Minimal cognitive overhead
 - Instant availability (< 2 second spawn)
 - No interruption to workflow
 

@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Fetch all history for changelog generation
-    
+
     - name: Determine version
       run: |
         if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -46,65 +46,65 @@ jobs:
           # Manual workflow dispatch
           VERSION="${{ github.event.inputs.version }}"
         fi
-        
+
         if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Invalid version format: $VERSION"
           echo "Expected format: v1.0.0"
           exit 1
         fi
-        
+
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "VERSION_NO_V=${VERSION#v}" >> $GITHUB_ENV
         echo "Release version: $VERSION"
-    
+
     - name: Update version in pyproject.toml
       run: |
         sed -i 's/version = "[^"]*"/version = "${{ env.VERSION_NO_V }}"/' desktop/pyproject.toml
-        
+
         # Verify the change
         grep "version = \"${{ env.VERSION_NO_V }}\"" desktop/pyproject.toml
-    
+
     - name: Generate changelog
       id: changelog
       run: |
         # Get the previous tag
         PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -2 | tail -1)
-        
+
         if [ -z "$PREV_TAG" ]; then
           echo "No previous tag found, using initial commit"
           PREV_TAG=$(git rev-list --max-parents=0 HEAD)
         fi
-        
+
         echo "Generating changelog from $PREV_TAG to ${{ env.VERSION }}"
-        
+
         # Generate changelog using git log
         CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD | grep -E '^- (feat|fix|refactor|docs|style|test|chore):' || echo "- Initial release")
-        
+
         # Save changelog to file and environment
         echo "$CHANGELOG" > CHANGELOG.md
-        
+
         # Create multiline output
         {
           echo 'CHANGELOG<<EOF'
           echo "$CHANGELOG"
           echo EOF
         } >> $GITHUB_OUTPUT
-    
+
     - name: Create Release Archive
       run: |
         # Create a clean archive of the source code
         mkdir -p release-artifacts
-        
+
         # Copy relevant files
         cp -r desktop/ release-artifacts/
         cp CLAUDE.md README.md DEVELOPMENT.md IDEAS.md install.sh release-artifacts/
-        
+
         # Create tarball
         tar -czf quip-${{ env.VERSION_NO_V }}.tar.gz -C release-artifacts .
-        
+
         # Create zip
         cd release-artifacts && zip -r ../quip-${{ env.VERSION_NO_V }}.zip . && cd ..
-    
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
@@ -112,21 +112,21 @@ jobs:
         name: Quip ${{ env.VERSION }}
         body: |
           ## What's Changed
-          
+
           ${{ steps.changelog.outputs.CHANGELOG }}
-          
+
           ## Installation
-          
+
           ### One-liner install (recommended):
           ```bash
           curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
           ```
-          
+
           ### With autostart:
           ```bash
           curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash -s -- --autostart
           ```
-          
+
           ### Manual install:
           ```bash
           wget https://github.com/${{ github.repository }}/archive/${{ env.VERSION }}.tar.gz
@@ -135,25 +135,25 @@ jobs:
           uv sync
           uv run quip
           ```
-          
+
           ## Usage
-          
+
           - `quip` - Launch GUI for instant thought capture
           - `quip-daemon start` - Start background daemon with global hotkey (Ctrl+Shift+Space)
           - `quip-daemon stop` - Stop background daemon
-          
+
           Notes are saved to `~/notes/5. Inbox/Inbox.md`
         files: |
           quip-${{ env.VERSION_NO_V }}.tar.gz
           quip-${{ env.VERSION_NO_V }}.zip
         draft: false
         prerelease: false
-        
+
     - name: Update main branch with version bump
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        
+
         git add desktop/pyproject.toml
         git commit -m "chore: bump version to ${{ env.VERSION_NO_V }}" || exit 0
         git push origin main || echo "Failed to push version bump (this is ok for tag-triggered releases)"
