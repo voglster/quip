@@ -16,15 +16,18 @@ class TestVoiceHandler:
         """Create a VoiceHandler instance for testing."""
         with (
             patch("voice.voice_handler.config", mock_config),
-            patch("voice.voice_handler.VoiceRecorder") as mock_recorder,
             patch(
                 "voice.voice_handler.create_transcription_service"
             ) as mock_transcription,
         ):
-            mock_recorder.return_value = mock_voice_components["recorder"]
             mock_transcription.return_value = mock_voice_components["transcription"]
 
-            return VoiceHandler()
+            voice_handler = VoiceHandler()
+
+            # For tests, pre-load the voice recorder to avoid lazy loading complexity
+            voice_handler.voice_recorder = mock_voice_components["recorder"]
+
+            return voice_handler
 
     def test_voice_handler_creation(self, voice_handler):
         """Test VoiceHandler initialization."""
@@ -262,7 +265,6 @@ class TestVoiceHandler:
         import threading
 
         with (
-            patch("voice.voice_handler.VoiceRecorder"),
             patch("voice.voice_handler.create_transcription_service") as mock_create,
         ):
             mock_transcription = Mock()
@@ -323,3 +325,29 @@ class TestVoiceHandler:
         voice_handler.on_transcription_error.assert_called_once_with(
             "Transcription service still loading, please try again in a moment"
         )
+
+    def test_voice_recorder_lazy_loading(self, mock_config):
+        """Test that voice recorder is loaded lazily when needed."""
+        with patch("voice.voice_handler.create_transcription_service"):
+            voice_handler = VoiceHandler()
+
+            # Initially voice recorder should be None
+            assert voice_handler.voice_recorder is None
+            assert not voice_handler.voice_recorder_loading
+            assert not voice_handler.voice_recorder_failed
+
+            # Mock the lazy loading by patching the import
+            with patch("voice_recorder.VoiceRecorder") as mock_voice_recorder:
+                mock_recorder_instance = Mock()
+                mock_voice_recorder.return_value = mock_recorder_instance
+
+                # Call _ensure_voice_recorder_loaded
+                result = voice_handler._ensure_voice_recorder_loaded()
+
+                # Should successfully load
+                assert result is True
+                assert voice_handler.voice_recorder == mock_recorder_instance
+
+                # Should set up callbacks
+                assert voice_handler.voice_recorder.on_recording_start is not None
+                assert voice_handler.voice_recorder.on_recording_stop is not None

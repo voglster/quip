@@ -8,7 +8,6 @@ from typing import Callable, Optional
 
 from config import config
 from transcription import create_transcription_service
-from voice_recorder import VoiceRecorder
 
 
 class VoiceHandler:
@@ -30,8 +29,10 @@ class VoiceHandler:
         )  # Convert to seconds
         self.recording_tail_active = False  # Track if we're in the tail period
 
-        # Initialize components
-        self.voice_recorder = VoiceRecorder()
+        # Defer component initialization for faster startup
+        self.voice_recorder = None
+        self.voice_recorder_loading = False
+        self.voice_recorder_failed = False
 
         # Defer transcription service initialization for faster startup
         self.transcription_service = None
@@ -52,8 +53,7 @@ class VoiceHandler:
         self.on_transcription_complete: Optional[Callable[[str], None]] = None
         self.on_transcription_error: Optional[Callable[[str], None]] = None
 
-        # Set up internal callbacks for voice recorder
-        self._setup_voice_callbacks()
+        # Voice recorder will be initialized lazily when needed
 
     def _init_audio_feedback(self) -> None:
         """Initialize audio feedback file paths."""
@@ -77,10 +77,35 @@ class VoiceHandler:
             if config.debug_mode:
                 print(f"DEBUG: Audio feedback initialization failed: {e}")
 
-    def _setup_voice_callbacks(self) -> None:
-        """Set up internal callbacks for voice recorder."""
-        self.voice_recorder.on_recording_start = self._on_voice_recording_start
-        self.voice_recorder.on_recording_stop = self._on_voice_recording_stop
+    def _ensure_voice_recorder_loaded(self) -> bool:
+        """Ensure voice recorder is loaded. Returns True if successful."""
+        if self.voice_recorder:
+            return True
+
+        if self.voice_recorder_loading:
+            return False  # Still loading
+
+        if self.voice_recorder_failed:
+            return False  # Failed to load
+
+        # Load voice recorder now
+        try:
+            from voice_recorder import VoiceRecorder
+
+            self.voice_recorder = VoiceRecorder()
+
+            # Set up callbacks
+            self.voice_recorder.on_recording_start = self._on_voice_recording_start
+            self.voice_recorder.on_recording_stop = self._on_voice_recording_stop
+
+            if config.debug_mode:
+                print("DEBUG: Voice recorder loaded successfully")
+            return True
+        except Exception as e:
+            self.voice_recorder_failed = True
+            if config.debug_mode:
+                print(f"DEBUG: Failed to load voice recorder: {e}")
+            return False
 
     def _play_sound(self, sound_path: Optional[Path]) -> None:
         """Play a sound effect if available."""
@@ -283,6 +308,13 @@ class VoiceHandler:
         if self.on_recording_start:
             self.on_recording_start()
 
+        # Ensure voice recorder is loaded
+        if not self._ensure_voice_recorder_loaded():
+            if config.debug_mode:
+                print("DEBUG: Voice recorder not available - falling back to text mode")
+            self.stop_voice_recording()
+            return False
+
         # Start actual voice recording
         success = self.voice_recorder.start_recording()
         if not success:
@@ -309,7 +341,9 @@ class VoiceHandler:
         self._play_sound(self.sound_record_stop)
 
         # Stop recording and get audio data
-        audio_data = self.voice_recorder.stop_recording()
+        audio_data = None
+        if self.voice_recorder:
+            audio_data = self.voice_recorder.stop_recording()
 
         if audio_data is not None and len(audio_data) > 0:
             # Check if transcription service is ready
