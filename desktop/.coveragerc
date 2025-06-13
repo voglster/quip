@@ -1,0 +1,22 @@
+[run]
+source = .
+omit = 
+    tests/*
+    .venv/*
+    vosk-models/*
+    sounds/*
+    __pycache__/*
+    *.pyc
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if False:
+
+[html]
+directory = htmlcov
