@@ -135,7 +135,7 @@ class TestLLMClient:
                         },
                         {
                             "role": "user",
-                            "content": "Improve this note:\n\noriginal text",
+                            "content": "Improve this note:\n\nNote to improve:\noriginal text",
                         },
                     ],
                     "max_tokens": 1000,
