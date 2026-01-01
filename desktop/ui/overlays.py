@@ -4,6 +4,14 @@ import random
 import tkinter as tk
 from typing import Optional
 
+from .fonts import (
+    HELP_TEXT_FONT,
+    KEYBIND_FONT,
+    PLACEHOLDER_FONT,
+    PROCESSING_FONT,
+    RECORDING_FONT,
+)
+
 
 class OverlayManager:
     """Manages different overlay states for the text widget."""
@@ -49,7 +57,7 @@ class OverlayManager:
         self.empty_state_overlay = tk.Label(
             self.parent_frame,
             text=random.choice(self.PLACEHOLDER_MESSAGES),
-            font=("Helvetica", 16, "italic"),
+            font=PLACEHOLDER_FONT,
             fg="#666666",
             bg=self.bg_color,
             justify="center",
@@ -70,7 +78,7 @@ class OverlayManager:
         self.recording_label = tk.Label(
             self.recording_overlay,
             text="🎤 Recording... (release Tab to stop)",
-            font=("Helvetica", 18, "bold"),
+            font=RECORDING_FONT,
             fg="#ff9999",
             bg="#4d2626",
             justify="center",
@@ -92,7 +100,7 @@ class OverlayManager:
         self.processing_label = tk.Label(
             self.processing_overlay,
             text="🧠 Processing audio...",
-            font=("Helvetica", 18, "bold"),
+            font=PROCESSING_FONT,
             fg="#99ccff",
             bg="#264d4d",
             justify="center",
@@ -186,7 +194,7 @@ class TooltipManager:
         self.info_icon = tk.Label(
             self.info_frame,
             text="ⓘ",
-            font=("Helvetica", 12),
+            font=HELP_TEXT_FONT,
             fg="#666666",  # Subtle gray
             bg=self.bg_color,
             cursor="hand2",
@@ -216,7 +224,7 @@ class TooltipManager:
         self.tooltip_label = tk.Label(
             self.tooltip_window,
             text=tooltip_text,
-            font=("Helvetica", 10),
+            font=KEYBIND_FONT,
             bg="#1a1a1a",
             fg="#ffffff",
             relief="solid",

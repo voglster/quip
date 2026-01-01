@@ -46,6 +46,7 @@ class QuipConfig:
                 "max_tokens": 1000,
                 "temperature": 0.7,
                 "improve_prompt": "This is a quick note that needs improvement. Fix spelling, grammar, and clarity while preserving the original meaning and intent. Return only the improved text without explanations or additions:",
+                "voice_improve_prompt": "Dictated via speech recognition. Fix punctuation, grammar, word recognition errors. Technical terms often misheard (github→get up). Use context clues - favor technical terms when appropriate. Consider vocabulary hints if provided. Be aggressive with obvious corrections. Return only improved text.",
             },
             "voice": {
                 "enabled": True,
@@ -54,6 +55,8 @@ class QuipConfig:
                 "hold_threshold_ms": 200,
                 "audio_feedback": True,
                 "recording_tail_ms": 400,
+                "auto_improve": False,
+                "vocabulary_hints": [],
             },
         }
 
@@ -260,6 +263,27 @@ class QuipConfig:
     def voice_recording_tail_ms(self) -> int:
         """Get voice recording tail duration in milliseconds"""
         return self.get("voice", "recording_tail_ms", 300)
+
+    @property
+    def voice_auto_improve(self) -> bool:
+        """Get voice auto-improve setting"""
+        return self.get("voice", "auto_improve", False)
+
+    @property
+    def voice_vocabulary_hints(self) -> list:
+        """Get voice vocabulary hints list"""
+        return self.get("voice", "vocabulary_hints", [])
+
+    @property
+    def llm_voice_improve_prompt(self) -> str:
+        """Get LLM voice improve prompt"""
+        default_prompt = (
+            "Dictated via speech recognition. Fix punctuation, grammar, word recognition errors. "
+            "Technical terms often misheard (github→get up). Use context clues - favor technical "
+            "terms when appropriate. Consider vocabulary hints if provided. Be aggressive with "
+            "obvious corrections. Return only improved text."
+        )
+        return self.get("llm", "voice_improve_prompt", default_prompt)
 
 
 # Global config instance

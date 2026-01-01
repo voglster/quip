@@ -1,11 +1,15 @@
 """Main application controller that coordinates all components."""
 
 import subprocess
+import threading
 import tkinter as tk
+import tkinter.font as tkFont
 
 from config import config
 from core.note_manager import NoteManager
 from curator.curator import CuratorManager
+from llm import llm_client, LLMError
+from ui.fonts import FONT_FAMILY
 from ui.overlays import TooltipManager
 from ui.text_widget import QuipTextWidget
 from ui.window_manager import WindowManager
@@ -19,6 +23,9 @@ class QuipApplication:
         # Initialize Tkinter root
         self.root = tk.Tk()
         self.root.title("Quip")
+
+        # Configure default fonts for better rendering
+        self._configure_default_fonts()
 
         # Initialize core components
         self.window_manager = WindowManager(self.root)
@@ -37,6 +44,19 @@ class QuipApplication:
 
         # Setup window and show
         self._finalize_setup()
+
+    def _configure_default_fonts(self) -> None:
+        """Configure default fonts for better rendering on Linux."""
+        try:
+            # Configure TkDefaultFont to use our font family
+            default_font = tkFont.nametofont("TkDefaultFont")
+            default_font.configure(family=FONT_FAMILY)
+
+            text_font = tkFont.nametofont("TkTextFont")
+            text_font.configure(family=FONT_FAMILY)
+        except Exception:
+            # If font configuration fails, just continue
+            pass
 
     def _setup_ui(self) -> None:
         """Set up the main UI components."""
@@ -233,11 +253,20 @@ class QuipApplication:
         """Handle successful transcription."""
 
         def update_text():
-            if transcribed_text.strip():
-                self.text_widget.insert_text_smart_spacing(transcribed_text)
-            else:
+            if not transcribed_text.strip():
                 # Just update to normal state if no text
                 self.text_widget.hide_all_overlays()
+                return
+
+            # Check if voice auto-improvement is enabled
+            if config.voice_auto_improve and config.llm_enabled:
+                # Show processing overlay (shows "🧠 Processing audio...")
+                self.text_widget.show_processing_overlay()
+                # Start async improvement
+                self._improve_voice_text_async(transcribed_text)
+            else:
+                # Insert text normally without improvement
+                self.text_widget.insert_text_smart_spacing(transcribed_text)
 
         # Update UI in main thread
         self.root.after(0, update_text)
@@ -251,6 +280,45 @@ class QuipApplication:
 
         # Update UI in main thread
         self.root.after(0, update_text)
+
+    def _improve_voice_text_async(self, transcribed_text: str) -> None:
+        """Improve voice-transcribed text asynchronously using LLM.
+
+        Args:
+            transcribed_text: The raw transcribed text from Vosk
+        """
+
+        def improvement_worker():
+            try:
+                # Get vocabulary hints from config
+                vocabulary_hints = config.voice_vocabulary_hints
+
+                # Call LLM to improve the text
+                improved_text = llm_client.improve_note(
+                    text=transcribed_text,
+                    vocabulary_hints=vocabulary_hints,
+                    use_voice_prompt=True,
+                )
+
+                # Insert improved text in main thread
+                def insert_improved():
+                    self.text_widget.insert_text_smart_spacing(improved_text)
+
+                self.root.after(0, insert_improved)
+
+            except LLMError as e:
+                if config.debug_mode:
+                    print(f"DEBUG: Voice text improvement failed: {e}")
+
+                # Fall back to original transcribed text on error
+                def insert_fallback():
+                    self.text_widget.insert_text_smart_spacing(transcribed_text)
+
+                self.root.after(0, insert_fallback)
+
+        # Run improvement in background thread
+        improvement_thread = threading.Thread(target=improvement_worker, daemon=True)
+        improvement_thread.start()
 
     def run(self) -> None:
         """Start the application main loop."""

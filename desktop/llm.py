@@ -56,12 +56,20 @@ class LLMClient:
         except Exception as e:
             raise LLMError(f"Request failed: {e}")
 
-    def improve_note(self, text: str, curator_feedback: str = None) -> str:
+    def improve_note(
+        self,
+        text: str,
+        curator_feedback: str = None,
+        vocabulary_hints: list = None,
+        use_voice_prompt: bool = False,
+    ) -> str:
         """Improve a quick note using configured prompt
 
         Args:
             text: The note text to improve
             curator_feedback: Optional curator feedback to provide context
+            vocabulary_hints: Optional list of commonly-used terms to watch for
+            use_voice_prompt: If True, use voice-specific improvement prompt
 
         Returns:
             Improved note text
@@ -75,13 +83,26 @@ class LLMClient:
         if not text.strip():
             return text
 
-        prompt = config.llm_improve_prompt
+        # Choose prompt based on voice or manual improvement
+        prompt = (
+            config.llm_voice_improve_prompt
+            if use_voice_prompt
+            else config.llm_improve_prompt
+        )
+
+        # Build user content with optional context
+        user_content = prompt
+
+        # Add vocabulary hints context if provided
+        if vocabulary_hints and use_voice_prompt:
+            hints_text = ", ".join(vocabulary_hints)
+            user_content += f"\n\nUser's common vocabulary: {hints_text}\nConsider these terms when similar-sounding words appear in context."
 
         # If curator feedback is provided, include it in the context
         if curator_feedback:
-            user_content = f"{prompt}\n\nCurator feedback that was provided to the user:\n{curator_feedback}\n\nNote to improve:\n{text}"
-        else:
-            user_content = f"{prompt}\n\n{text}"
+            user_content += f"\n\nCurator feedback that was provided to the user:\n{curator_feedback}"
+
+        user_content += f"\n\nNote to improve:\n{text}"
 
         messages = [
             {
@@ -99,16 +120,20 @@ class LLMClient:
         }
 
         if config.debug_mode:
+            print("\n" + "=" * 80)
             print("DEBUG LLM: Improving note")
-            print(f"DEBUG LLM: Input text: '{text}'")
-            print(f"DEBUG LLM: Prompt: '{prompt}'")
-            print(f"DEBUG LLM: Full request: {request_data}")
+            print("=" * 80)
+            print(f"Input text: '{text}'")
+            print(f"\nPrompt: '{prompt}'")
+            print("\nFull request:")
+            print(json.dumps(request_data, indent=2))
 
         try:
             response = self._make_request("chat/completions", request_data)
 
             if config.debug_mode:
-                print(f"DEBUG LLM: Raw response: {response}")
+                print("\nRaw response:")
+                print(json.dumps(response, indent=2))
 
             if "choices" not in response or not response["choices"]:
                 raise LLMError("No response choices returned from API")
@@ -116,7 +141,8 @@ class LLMClient:
             content = response["choices"][0]["message"]["content"]
 
             if config.debug_mode:
-                print(f"DEBUG LLM: Improved text: '{content}'")
+                print(f"\nImproved text: '{content}'")
+                print("=" * 80 + "\n")
 
             return content.strip()
 

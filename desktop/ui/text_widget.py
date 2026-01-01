@@ -3,6 +3,7 @@
 import tkinter as tk
 from typing import Callable, Optional
 
+from .fonts import MAIN_TEXT_FONT
 from .overlays import OverlayManager
 
 
@@ -26,7 +27,7 @@ class QuipTextWidget:
         """Create and configure the main text widget."""
         self.text = tk.Text(
             self.parent_frame,
-            font=("Helvetica", 14),
+            font=MAIN_TEXT_FONT,
             wrap="word",
             height=4,
             bg=self.bg_color,
