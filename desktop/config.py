@@ -30,6 +30,7 @@ class QuipConfig:
                 "window_width": 800,
                 "window_height": 150,
                 "transparency": 0.98,
+                "font_family": "DejaVu Sans",
             },
             "notes": {"save_path": "~/notes/5. Inbox/Inbox.md"},
             "system": {"auto_install_hotkeys": True},
@@ -167,6 +168,11 @@ class QuipConfig:
     def transparency(self) -> float:
         """Get window transparency"""
         return self.get("ui", "transparency", 0.98)
+
+    @property
+    def font_family(self) -> str:
+        """Get font family for UI elements"""
+        return self.get("ui", "font_family", "DejaVu Sans")
 
     @property
     def save_path(self) -> str:

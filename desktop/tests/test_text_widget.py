@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from ui.fonts import MAIN_TEXT_FONT
 from ui.text_widget import QuipTextWidget
 
 
@@ -46,7 +47,7 @@ class TestQuipTextWidget:
         call_args = mocks["text"].call_args
 
         # Check key configuration parameters
-        assert call_args[1]["font"] == ("DejaVu Sans", 14)
+        assert call_args[1]["font"] == MAIN_TEXT_FONT
         assert call_args[1]["wrap"] == "word"
         assert call_args[1]["height"] == 4
         assert call_args[1]["bg"] == "#2b2b2b"

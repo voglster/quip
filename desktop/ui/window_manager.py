@@ -26,9 +26,26 @@ class MonitorInfo:
 class WindowManager:
     """Manages window positioning, styling, and monitor detection."""
 
+    # Base DPI that window dimensions are designed for
+    BASE_DPI = 96.0
+
     def __init__(self, root: tk.Tk):
         self.root = root
         self.original_height: Optional[int] = None
+        self.dpi_scale = self._detect_dpi_scale()
+
+    def _detect_dpi_scale(self) -> float:
+        """Detect DPI scale factor relative to standard 96 DPI."""
+        try:
+            dpi = self.root.winfo_fpixels("1i")  # pixels per inch
+            scale = dpi / self.BASE_DPI
+            # Clamp to reasonable range (1.0 to 4.0)
+            scale = max(1.0, min(4.0, scale))
+            if config.debug_mode:
+                print(f"DEBUG: Detected DPI={dpi}, scale factor={scale:.2f}x")
+            return scale
+        except Exception:
+            return 1.0  # Fallback to no scaling
 
     def setup_window_properties(self) -> None:
         """Configure window properties for borderless overlay behavior."""
@@ -170,8 +187,9 @@ class WindowManager:
 
     def position_window_centered(self) -> None:
         """Position window centered on the current monitor."""
-        window_width = config.window_width
-        window_height = config.window_height
+        # Apply DPI scaling to window dimensions
+        window_width = int(config.window_width * self.dpi_scale)
+        window_height = int(config.window_height * self.dpi_scale)
         self.original_height = window_height  # Store for expansion/collapse
 
         # Get monitor dimensions and find current monitor
@@ -207,7 +225,9 @@ class WindowManager:
         if self.original_height is None:
             return
 
-        expanded_height = self.original_height + additional_height
+        # Apply DPI scaling to additional height
+        scaled_additional = int(additional_height * self.dpi_scale)
+        expanded_height = self.original_height + scaled_additional
 
         # Get current window position
         current_geometry = self.root.geometry()

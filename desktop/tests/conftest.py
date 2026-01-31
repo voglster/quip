@@ -21,6 +21,7 @@ def mock_config():
     config.window_width = 800
     config.window_height = 150
     config.transparency = 0.95
+    config.font_family = "DejaVu Sans"
     config.save_path = "~/notes/5. Inbox/Inbox.md"
     config.debug_mode = False
     config.llm_enabled = False

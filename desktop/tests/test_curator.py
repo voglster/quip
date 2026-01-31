@@ -62,7 +62,10 @@ class TestCuratorManager:
         """Test successfully toggling curator mode."""
         mock_config.llm_enabled = True
 
-        with patch.object(curator_manager, "show_curator_feedback") as mock_show:
+        with (
+            patch("curator.curator.config", mock_config),
+            patch.object(curator_manager, "show_curator_feedback") as mock_show,
+        ):
             result = curator_manager.toggle_curator_mode("Test note")
 
             assert result is True
@@ -126,7 +129,8 @@ class TestCuratorManager:
         """Test improving note with empty text."""
         mock_config.llm_enabled = True
 
-        success, result = curator_manager.improve_note("")
+        with patch("curator.curator.config", mock_config):
+            success, result = curator_manager.improve_note("")
 
         assert success is False
         assert result == "No text to improve"
@@ -137,7 +141,8 @@ class TestCuratorManager:
         mock_config.llm_enabled = True
         mock_llm_client.improve_note.return_value = "Improved note text"
 
-        success, result = curator_manager.improve_note("Original note")
+        with patch("curator.curator.config", mock_config):
+            success, result = curator_manager.improve_note("Original note")
 
         assert success is True
         assert result == "Improved note text"
@@ -149,7 +154,8 @@ class TestCuratorManager:
         mock_config.llm_enabled = True
         mock_llm_client.improve_note.side_effect = Exception("API Error")
 
-        success, result = curator_manager.improve_note("Test note")
+        with patch("curator.curator.config", mock_config):
+            success, result = curator_manager.improve_note("Test note")
 
         assert success is False
         assert "API Error" in result
@@ -207,7 +213,10 @@ class TestCuratorManager:
         curator_manager.curator_mode = True
         curator_manager.current_curator_feedback = "What is the deadline?"
 
-        with patch("llm.llm_client") as mock_llm_client:
+        with (
+            patch("curator.curator.config", mock_config),
+            patch("llm.llm_client") as mock_llm_client,
+        ):
             mock_llm_client.improve_note.return_value = "Improved text"
 
             success, result = curator_manager.improve_note("Test note")

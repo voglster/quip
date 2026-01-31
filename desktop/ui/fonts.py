@@ -1,7 +1,10 @@
 """Centralized font configuration for the Quip UI."""
 
-# Base font family - change this one place to affect all UI elements
-FONT_FAMILY = "DejaVu Sans"
+from config import config
+
+# Base font family - loaded from config, defaults to "DejaVu Sans"
+# Use "Helvetica" on HiDPI Linux displays for better anti-aliasing
+FONT_FAMILY = config.font_family
 
 # Font configurations for different UI elements
 MAIN_TEXT_FONT = (FONT_FAMILY, 14)
