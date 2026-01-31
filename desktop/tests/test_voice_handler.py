@@ -354,6 +354,7 @@ class TestVoiceHandler:
 
     def test_voice_recorder_background_loading(self, mock_config):
         """Test that voice recorder can be loaded in background."""
+        import threading
         import time
 
         with patch("voice.voice_handler.create_transcription_service"):
@@ -364,20 +365,34 @@ class TestVoiceHandler:
             assert not voice_handler.voice_recorder_loading
             assert not voice_handler.voice_recorder_failed
 
-            # Mock the background loading by patching the import
-            with patch("voice_recorder.VoiceRecorder") as mock_voice_recorder:
-                mock_recorder_instance = Mock()
-                mock_voice_recorder.return_value = mock_recorder_instance
+            # Use an event to control when the mock VoiceRecorder completes
+            load_started = threading.Event()
+            allow_completion = threading.Event()
 
+            def slow_voice_recorder_init():
+                load_started.set()  # Signal that loading has started
+                allow_completion.wait(timeout=2.0)  # Wait for test to allow completion
+                return Mock()
+
+            # Mock the background loading by patching the import
+            with patch(
+                "voice_recorder.VoiceRecorder", side_effect=slow_voice_recorder_init
+            ):
                 # Start background loading
                 voice_handler.start_voice_recorder_background_loading()
 
-                # Should be marked as loading
+                # Wait for loading to actually start in the background thread
+                load_started.wait(timeout=2.0)
+
+                # Now we can reliably check the loading state
                 assert voice_handler.voice_recorder_loading
                 assert voice_handler.voice_recorder is None
 
+                # Allow the background thread to complete
+                allow_completion.set()
+
                 # Wait for background loading to complete
-                timeout = 2.0  # 2 second timeout
+                timeout = 2.0
                 start_time = time.time()
                 while (
                     voice_handler.voice_recorder_loading
@@ -387,7 +402,7 @@ class TestVoiceHandler:
 
                 # Should have completed loading
                 assert not voice_handler.voice_recorder_loading
-                assert voice_handler.voice_recorder == mock_recorder_instance
+                assert voice_handler.voice_recorder is not None
                 assert not voice_handler.voice_recorder_failed
 
                 # Should set up callbacks

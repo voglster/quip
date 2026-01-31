@@ -476,8 +476,10 @@ class VoiceHandler:
                     model_size=config.voice_model_size, language=config.voice_language
                 )
 
-                # Initialize the transcription service
+                # Initialize the transcription service and WAIT for it to complete
                 transcription_service.initialize_async()
+                if not transcription_service.wait_for_initialization(timeout=60.0):
+                    raise RuntimeError("Transcription engine failed to initialize")
 
                 # Set up callbacks once loaded
                 transcription_service.on_transcription_start = (
