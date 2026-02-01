@@ -113,10 +113,34 @@ class TestLLMClient:
                 client._make_request("chat/completions", {"test": "data"})
 
     def test_improve_note_success(self, mock_config):
-        """Test successful note improvement."""
+        """Test successful note improvement with YAML response."""
         client = LLMClient()
 
         with patch.object(client, "_make_request") as mock_request:
+            # Model returns YAML-formatted response
+            mock_request.return_value = {
+                "choices": [
+                    {"message": {"content": "```yaml\nImproved note text\n```"}}
+                ]
+            }
+
+            result = client.improve_note("original text")
+
+            assert result == "Improved note text"
+            mock_request.assert_called_once()
+            # Verify request structure
+            call_args = mock_request.call_args[0]
+            assert call_args[0] == "chat/completions"
+            request_data = call_args[1]
+            assert request_data["model"] == "llama2"
+            assert "yaml" in request_data["messages"][1]["content"].lower()
+
+    def test_improve_note_success_raw_fallback(self, mock_config):
+        """Test note improvement falls back to raw content if no YAML fence."""
+        client = LLMClient()
+
+        with patch.object(client, "_make_request") as mock_request:
+            # Model returns raw text without YAML fence
             mock_request.return_value = {
                 "choices": [{"message": {"content": "Improved note text"}}]
             }
@@ -124,24 +148,6 @@ class TestLLMClient:
             result = client.improve_note("original text")
 
             assert result == "Improved note text"
-            mock_request.assert_called_once_with(
-                "chat/completions",
-                {
-                    "model": "llama2",
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are a helpful assistant that improves text. Return only the improved text without any explanations, quotes, or additional formatting. If curator feedback is provided, use it to guide your improvements.",
-                        },
-                        {
-                            "role": "user",
-                            "content": "Improve this note:\n\nNote to improve:\noriginal text",
-                        },
-                    ],
-                    "max_tokens": 1000,
-                    "temperature": 0.7,
-                },
-            )
 
     def test_improve_note_with_curator_feedback(self, mock_config):
         """Test note improvement with curator feedback."""
@@ -149,7 +155,9 @@ class TestLLMClient:
 
         with patch.object(client, "_make_request") as mock_request:
             mock_request.return_value = {
-                "choices": [{"message": {"content": "Improved note text"}}]
+                "choices": [
+                    {"message": {"content": "```yaml\nImproved note text\n```"}}
+                ]
             }
 
             result = client.improve_note("original text", "Make it more formal")

@@ -1,10 +1,61 @@
 """LLM integration for Quip - Simple wrapper for Ollama API calls"""
 
 import json
+import re
 import urllib.request
 import urllib.parse
 from typing import Optional, Dict, Any
 from config import config
+
+
+def extract_yaml_content(response: str) -> Optional[str]:
+    """Extract improved text from YAML/code fence in LLM response.
+
+    Handles multiple formats:
+    1. ```yaml\nimproved_text: |\n  text\n```
+    2. ```yaml\nimproved_text: "text"\n```
+    3. ```yaml\ntext\n```  (just content in fence)
+    4. ```\ntext\n```  (generic code fence)
+
+    Returns:
+        Extracted text or None if no code fence found
+    """
+    # Look for any code fence (yaml, yml, or generic)
+    fence_match = re.search(
+        r"```(?:ya?ml)?\s*\n(.*?)```", response, re.DOTALL | re.IGNORECASE
+    )
+    if not fence_match:
+        return None
+
+    yaml_content = fence_match.group(1).strip()
+
+    # Try to parse as YAML with improved_text field
+    # Block literal: improved_text: |\n  text here
+    block_match = re.search(
+        r"improved_text:\s*\|\s*\n(.*?)(?:\n\w|\Z)", yaml_content, re.DOTALL
+    )
+    if block_match:
+        # Dedent the block content
+        lines = block_match.group(1).split("\n")
+        if lines:
+            indents = [len(line) - len(line.lstrip()) for line in lines if line.strip()]
+            min_indent = min(indents) if indents else 0
+            dedented = "\n".join(
+                line[min_indent:] if len(line) > min_indent else line for line in lines
+            )
+            return dedented.strip()
+
+    # Inline style: improved_text: "text here" or improved_text: text here
+    inline_match = re.search(
+        r'improved_text:\s*["\']?(.*?)["\']?\s*$', yaml_content, re.MULTILINE
+    )
+    if inline_match:
+        return inline_match.group(1).strip()
+
+    # Fallback: return content inside fence, stripping YAML comments
+    lines = yaml_content.split("\n")
+    content_lines = [line for line in lines if not line.strip().startswith("#")]
+    return "\n".join(content_lines).strip()
 
 
 class LLMError(Exception):
@@ -104,12 +155,22 @@ class LLMClient:
 
         user_content += f"\n\nNote to improve:\n{text}"
 
+        # Build YAML output instruction - allow comments for model "thinking"
+        yaml_instruction = """
+
+Return your response in this exact YAML format inside a code fence:
+```yaml
+# You can add comments here if needed
+improved_text: |
+  Your improved text here
+```"""
+
         messages = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant that improves text. Return only the improved text without any explanations, quotes, or additional formatting. If curator feedback is provided, use it to guide your improvements.",
+                "content": "You are a helpful assistant that improves text. If curator feedback is provided, use it to guide your improvements. Always respond with YAML format as instructed.",
             },
-            {"role": "user", "content": user_content},
+            {"role": "user", "content": user_content + yaml_instruction},
         ]
 
         request_data = {
@@ -140,11 +201,17 @@ class LLMClient:
 
             content = response["choices"][0]["message"]["content"]
 
+            # Try to extract from YAML format
+            extracted = extract_yaml_content(content)
+            result = extracted if extracted else content.strip()
+
             if config.debug_mode:
-                print(f"\nImproved text: '{content}'")
+                print(f"\nRaw content: '{content}'")
+                print(f"Extracted (YAML): '{extracted}'")
+                print(f"Final result: '{result}'")
                 print("=" * 80 + "\n")
 
-            return content.strip()
+            return result
 
         except LLMError:
             raise
