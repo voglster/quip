@@ -8,12 +8,6 @@ import urllib.request
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-# Handle tomli import for Python < 3.11
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
 
 class UpdateChecker:
     """Handles checking for and performing updates with rate limiting and caching"""
@@ -34,30 +28,13 @@ class UpdateChecker:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_current_version(self) -> str:
-        """Read current version from pyproject.toml"""
+        """Read current version from _version.py"""
         try:
-            # Try to find pyproject.toml in the current directory or parent directories
-            current_dir = Path(__file__).parent
-            pyproject_path = current_dir / "pyproject.toml"
+            from _version import __version__
 
-            if not pyproject_path.exists():
-                # Try parent directory (for installed version)
-                pyproject_path = current_dir.parent / "pyproject.toml"
-
-            if not pyproject_path.exists():
-                # Try install directory
-                if self.install_dir.exists():
-                    pyproject_path = self.install_dir / "desktop" / "pyproject.toml"
-
-            if pyproject_path.exists():
-                with open(pyproject_path, "rb") as f:
-                    pyproject_data = tomllib.load(f)
-                    return pyproject_data.get("project", {}).get("version", "0.1.0")
-        except Exception:
-            pass
-
-        # Fallback version if we can't read pyproject.toml
-        return "0.1.0"
+            return __version__
+        except ImportError:
+            return "0.0.0-dev"
 
     def _load_cache(self) -> Dict[str, Any]:
         """Load cached update check data"""

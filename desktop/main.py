@@ -1,14 +1,5 @@
-import sys
-from pathlib import Path
-
 from config import config
 from core.app import QuipApplication
-
-# Handle tomli import for Python < 3.11
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 
 def validate_llm_config():
@@ -87,13 +78,12 @@ def validate_llm_config():
 
 
 def get_version():
-    """Get version from pyproject.toml"""
+    """Get version from _version.py"""
     try:
-        pyproject_path = Path(__file__).parent / "pyproject.toml"
-        with open(pyproject_path, "rb") as f:
-            data = tomllib.load(f)
-            return data.get("project", {}).get("version", "unknown")
-    except Exception:
+        from _version import __version__
+
+        return __version__
+    except ImportError:
         return "unknown"
 
 

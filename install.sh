@@ -64,7 +64,7 @@ BIN_DIR="$HOME/.local/bin"
 
 # Create directories
 mkdir -p "$BIN_DIR"
-mkdir -p "$HOME/notes/5. Inbox"
+mkdir -p "$HOME/notes/Inbox"
 
 # Download and install Quip
 echo "⬇️  Downloading Quip..."
@@ -259,7 +259,7 @@ echo "   quip                 # Launch GUI"
 echo "   quip-daemon start    # Start background daemon with global hotkey"
 echo "   quip-daemon stop     # Stop background daemon"
 echo ""
-echo "📁 Notes saved to: ~/notes/5. Inbox/Inbox.md"
+echo "📁 Notes saved to: ~/notes/Inbox/"
 echo "🔥 Global hotkey: Win+Space (when daemon is running)"
 echo "🎤 Voice recording: Hold Tab to record, release to transcribe"
 echo ""

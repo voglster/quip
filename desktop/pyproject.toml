@@ -1,6 +1,6 @@
 [project]
 name = "quip"
-version = "0.6.6"
+dynamic = ["version"]
 description = "A minimal quick-note GUI application"
 requires-python = ">=3.8"
 dependencies = [
@@ -29,6 +29,9 @@ quip-daemon = "daemon:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

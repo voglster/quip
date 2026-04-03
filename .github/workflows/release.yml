@@ -2,158 +2,118 @@ name: Release
 
 on:
   push:
-    branches:
-      - 'release/*'
-      - 'release-*'
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., v1.0.0)'
-        required: true
-        type: string
+    tags: ["v*"]
 
 jobs:
-  create-release:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch all history for changelog generation
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Determine version
-      run: |
-        if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
-          # Tag push
-          VERSION="${{ github.ref_name }}"
-        elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == refs/heads/release* ]]; then
-          # Release branch push - extract version from branch name
-          BRANCH_NAME="${{ github.ref_name }}"
-          if [[ "$BRANCH_NAME" =~ release/v?([0-9]+\.[0-9]+\.[0-9]+) ]]; then
-            VERSION="v${BASH_REMATCH[1]}"
-          elif [[ "$BRANCH_NAME" =~ release-v?([0-9]+\.[0-9]+\.[0-9]+) ]]; then
-            VERSION="v${BASH_REMATCH[1]}"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Inject version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "__version__ = \"$VERSION\"" > desktop/_version.py
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Injected version: $VERSION"
+
+      - name: Run tests
+        working-directory: desktop
+        run: |
+          uv sync --group dev
+          uv run ruff check .
+          uv run pytest tests/ -v --cov=. --cov-fail-under=80
+
+      - name: Create release archive
+        run: |
+          mkdir -p release-artifacts
+          cp -r desktop/ release-artifacts/
+          cp CLAUDE.md README.md DEVELOPMENT.md install.sh release-artifacts/ 2>/dev/null || true
+          tar -czf quip-${{ env.VERSION }}.tar.gz -C release-artifacts .
+          cd release-artifacts && zip -r ../quip-${{ env.VERSION }}.zip . && cd ..
+
+      - name: Generate AI release notes
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: |
+          PREV=$(git tag -l 'v*' --sort=-v:refname | sed -n '2p')
+          PREV="${PREV:-$(git rev-list --max-parents=0 HEAD)}"
+          COMMITS="$(git log --oneline ${PREV}..HEAD)"
+          STATS="$(git diff --stat ${PREV}..HEAD)"
+
+          # Fall back to commit log if LLM secrets aren't configured
+          if [ -z "$LLM_API_KEY" ] || [ -z "$LLM_BASE_URL" ]; then
+            echo "LLM secrets not configured, using commit log for release notes."
+            echo "## Changes" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            git log --pretty=format:"- %s" ${PREV}..HEAD >> RELEASE_NOTES.md
           else
-            echo "Could not extract version from branch name: $BRANCH_NAME"
-            echo "Expected format: release/1.0.0 or release-v1.0.0"
-            exit 1
+            python3 -c "
+          import json, urllib.request, os, sys
+          base = os.environ['LLM_BASE_URL'].rstrip('/')
+          body = json.dumps({
+            'model': os.environ['LLM_MODEL'],
+            'max_tokens': 1024,
+            'messages': [{'role': 'user', 'content': '''Generate concise release notes for Quip ${{ github.ref_name }}.
+          Quip is a frictionless thought capture tool - press hotkey, capture thought, back to work.
+          Commits since last release:
+          ${COMMITS}
+          Diff stats:
+          ${STATS}
+          Format: brief intro sentence, then bulleted list grouped by category (Features, Fixes, Other). Keep it short.'''}]
+          }).encode()
+          req = urllib.request.Request(f'{base}/chat/completions',
+            data=body,
+            headers={'Authorization': f\"Bearer {os.environ['LLM_API_KEY']}\",
+                     'Content-Type': 'application/json'})
+          try:
+            resp = json.loads(urllib.request.urlopen(req, timeout=30).read())
+            print(resp['choices'][0]['message']['content'])
+          except Exception as e:
+            print(f'AI release notes failed ({e}), falling back to commit log.', file=sys.stderr)
+            sys.exit(1)
+          " > RELEASE_NOTES.md || {
+              echo "## Changes" > RELEASE_NOTES.md
+              echo "" >> RELEASE_NOTES.md
+              git log --pretty=format:"- %s" ${PREV}..HEAD >> RELEASE_NOTES.md
+            }
           fi
-        else
-          # Manual workflow dispatch
-          VERSION="${{ github.event.inputs.version }}"
-        fi
 
-        if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid version format: $VERSION"
-          echo "Expected format: v1.0.0"
-          exit 1
-        fi
-
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "VERSION_NO_V=${VERSION#v}" >> $GITHUB_ENV
-        echo "Release version: $VERSION"
-
-    - name: Update version in pyproject.toml
-      run: |
-        sed -i 's/version = "[^"]*"/version = "${{ env.VERSION_NO_V }}"/' desktop/pyproject.toml
-
-        # Verify the change
-        grep "version = \"${{ env.VERSION_NO_V }}\"" desktop/pyproject.toml
-
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # Get the previous tag
-        PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -2 | tail -1)
-
-        if [ -z "$PREV_TAG" ]; then
-          echo "No previous tag found, using initial commit"
-          PREV_TAG=$(git rev-list --max-parents=0 HEAD)
-        fi
-
-        echo "Generating changelog from $PREV_TAG to ${{ env.VERSION }}"
-
-        # Generate changelog using git log
-        CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD | grep -E '^- (feat|fix|refactor|docs|style|test|chore):' || echo "- Initial release")
-
-        # Save changelog to file and environment
-        echo "$CHANGELOG" > CHANGELOG.md
-
-        # Create multiline output
-        {
-          echo 'CHANGELOG<<EOF'
-          echo "$CHANGELOG"
-          echo EOF
-        } >> $GITHUB_OUTPUT
-
-    - name: Create Release Archive
-      run: |
-        # Create a clean archive of the source code
-        mkdir -p release-artifacts
-
-        # Copy relevant files
-        cp -r desktop/ release-artifacts/
-        cp CLAUDE.md README.md DEVELOPMENT.md IDEAS.md install.sh release-artifacts/
-
-        # Create tarball
-        tar -czf quip-${{ env.VERSION_NO_V }}.tar.gz -C release-artifacts .
-
-        # Create zip
-        cd release-artifacts && zip -r ../quip-${{ env.VERSION_NO_V }}.zip . && cd ..
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ env.VERSION }}
-        name: Quip ${{ env.VERSION }}
-        body: |
-          ## What's Changed
-
-          ${{ steps.changelog.outputs.CHANGELOG }}
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NOTES=$(cat RELEASE_NOTES.md)
+          INSTALL_SECTION="
 
           ## Installation
 
           ### One-liner install (recommended):
-          ```bash
+          \`\`\`bash
           curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
-          ```
-
-          ### With autostart:
-          ```bash
-          curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash -s -- --autostart
-          ```
+          \`\`\`
 
           ### Manual install:
-          ```bash
-          wget https://github.com/${{ github.repository }}/archive/${{ env.VERSION }}.tar.gz
-          tar -xzf ${{ env.VERSION }}.tar.gz
-          cd quip-${{ env.VERSION_NO_V }}/desktop
+          \`\`\`bash
+          wget https://github.com/${{ github.repository }}/archive/${{ github.ref_name }}.tar.gz
+          tar -xzf ${{ github.ref_name }}.tar.gz
+          cd quip-*/desktop
           uv sync
           uv run quip
-          ```
+          \`\`\`"
 
-          ## Usage
-
-          - `quip` - Launch GUI for instant thought capture
-          - `quip-daemon start` - Start background daemon with global hotkey (Ctrl+Shift+Space)
-          - `quip-daemon stop` - Stop background daemon
-
-          Notes are saved to `~/notes/5. Inbox/Inbox.md`
-        files: |
-          quip-${{ env.VERSION_NO_V }}.tar.gz
-          quip-${{ env.VERSION_NO_V }}.zip
-        draft: false
-        prerelease: false
-
-    - name: Update main branch with version bump
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-
-        git add desktop/pyproject.toml
-        git commit -m "chore: bump version to ${{ env.VERSION_NO_V }}" || exit 0
-        git push origin main || echo "Failed to push version bump (this is ok for tag-triggered releases)"
+          gh release create "${{ github.ref_name }}" \
+            quip-${{ env.VERSION }}.tar.gz \
+            quip-${{ env.VERSION }}.zip \
+            --title "Quip ${{ github.ref_name }}" \
+            --notes "${NOTES}${INSTALL_SECTION}"
