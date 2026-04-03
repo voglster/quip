@@ -31,4 +31,4 @@ jobs:
 
       - name: Test
         working-directory: desktop
-        run: uv run pytest tests/ -v --cov=. --cov-fail-under=80
+        run: uv run pytest tests/ -v

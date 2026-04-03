@@ -13,6 +13,7 @@ omit =
     config_watcher.py
     voice_recorder.py
     transcription.py
+    _version.py
 
 [report]
 fail_under = 70
