@@ -32,7 +32,7 @@ class QuipConfig:
                 "transparency": 0.98,
                 "font_family": "DejaVu Sans",
             },
-            "notes": {"save_path": "~/notes/5. Inbox/Inbox.md"},
+            "notes": {"save_path": "~/notes/Inbox"},
             "system": {"auto_install_hotkeys": True},
             "updates": {
                 "auto_update_check": True,
@@ -40,8 +40,8 @@ class QuipConfig:
             },
             "llm": {
                 "enabled": False,
-                "base_url": "http://localhost:11434/v1",
-                "model": "llama3.2:3b",
+                "base_url": "https://llm.jc.turbo.inc/v1",
+                "model": "llama3.2",
                 "api_key": "",
                 "timeout_seconds": 30,
                 "max_tokens": 1000,
@@ -176,10 +176,8 @@ class QuipConfig:
 
     @property
     def save_path(self) -> str:
-        """Get notes save path"""
-        return os.path.expanduser(
-            self.get("notes", "save_path", "~/notes/5. Inbox/Inbox.md")
-        )
+        """Get notes save directory path"""
+        return os.path.expanduser(self.get("notes", "save_path", "~/notes/Inbox"))
 
     @property
     def config_file_path(self) -> Path:
@@ -204,12 +202,12 @@ class QuipConfig:
     @property
     def llm_base_url(self) -> str:
         """Get LLM base URL"""
-        return self.get("llm", "base_url", "http://10.0.6.16:11434")
+        return self.get("llm", "base_url", "https://llm.jc.turbo.inc/v1")
 
     @property
     def llm_model(self) -> str:
         """Get LLM model name"""
-        return self.get("llm", "model", "LoTUs5494/mistral-small-3.1:latest")
+        return self.get("llm", "model", "llama3.2")
 
     @property
     def llm_api_key(self) -> str:

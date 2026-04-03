@@ -1,4 +1,4 @@
-"""LLM integration for Quip - Simple wrapper for Ollama API calls"""
+"""LLM integration for Quip - Simple wrapper for OpenAI-compatible API calls"""
 
 import json
 import re
@@ -272,6 +272,70 @@ improved_text: |
             raise
         except Exception as e:
             raise LLMError(f"Failed to process LLM response: {e}")
+
+    def generate_filename(self, text: str) -> str:
+        """Generate a descriptive filename from note content.
+
+        Args:
+            text: The note content
+
+        Returns:
+            A short descriptive title suitable as a filename, or empty string on failure
+
+        Raises:
+            LLMError: If the API call fails
+        """
+        if not config.llm_enabled:
+            raise LLMError("LLM functionality is disabled in configuration")
+
+        if not text.strip():
+            return ""
+
+        prompt = config.get(
+            "llm",
+            "filename_prompt",
+            (
+                "Given this note, return a short descriptive title suitable as a filename. "
+                "Keep it under 8 words. No file extension. No special characters except "
+                "spaces and hyphens. No quotes around the title. Just the title, nothing else."
+            ),
+        )
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You generate short, descriptive filenames from note content. Return only the title.",
+            },
+            {"role": "user", "content": f"{prompt}\n\nNote: {text}"},
+        ]
+
+        request_data = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": 50,
+            "temperature": 0.3,
+        }
+
+        if config.debug_mode:
+            print("DEBUG LLM: Generating filename")
+
+        response = self._make_request("chat/completions", request_data)
+
+        if "choices" not in response or not response["choices"]:
+            raise LLMError("No response choices returned from API")
+
+        title = response["choices"][0]["message"]["content"].strip()
+        # Strip quotes if the LLM wraps it
+        title = title.strip("\"'")
+        # Remove characters unsafe for filenames
+        title = re.sub(r'[<>:"/\\|?*]', "", title)
+        # Collapse whitespace
+        title = re.sub(r"\s+", " ", title).strip()
+
+        if config.debug_mode:
+            print(f"DEBUG LLM: Generated filename: '{title}'")
+
+        return title
 
     def test_connection(self) -> bool:
         """Test if LLM service is available

@@ -22,7 +22,7 @@ def mock_config():
     config.window_height = 150
     config.transparency = 0.95
     config.font_family = "DejaVu Sans"
-    config.save_path = "~/notes/5. Inbox/Inbox.md"
+    config.save_path = "~/notes/Inbox"
     config.debug_mode = False
     config.llm_enabled = False
     config.llm_model = "gpt-3.5-turbo"

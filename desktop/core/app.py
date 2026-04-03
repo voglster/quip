@@ -142,7 +142,9 @@ class QuipApplication:
             success = self.note_manager.save_note(note_text)
             if config.debug_mode:
                 if success:
-                    print(f"DEBUG: Note saved to {self.note_manager.get_save_path()}")
+                    print(
+                        f"DEBUG: Note saved to {self.note_manager.get_last_saved_path()}"
+                    )
                 else:
                     print("DEBUG: Failed to save note")
 
