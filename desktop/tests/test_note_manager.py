@@ -144,14 +144,14 @@ class TestNoteManager:
         with patch("core.note_manager.config", mock_config):
             note_manager = NoteManager()
 
-        with patch("threading.Thread") as mock_thread:
-            mock_thread_instance = MagicMock()
-            mock_thread.return_value = mock_thread_instance
+            with patch("threading.Thread") as mock_thread:
+                mock_thread_instance = MagicMock()
+                mock_thread.return_value = mock_thread_instance
 
-            note_manager.save_note("Test note")
+                note_manager.save_note("Test note")
 
-            mock_thread.assert_called_once()
-            mock_thread_instance.start.assert_called_once()
+                mock_thread.assert_called_once()
+                mock_thread_instance.start.assert_called_once()
 
     def test_rename_with_llm(self, temp_dir, mock_config):
         """Test the LLM rename logic."""

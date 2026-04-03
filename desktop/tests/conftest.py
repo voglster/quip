@@ -1,10 +1,20 @@
 """Shared test fixtures and configuration."""
 
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _mock_sounddevice():
+    """Stub sounddevice module so voice_recorder can be imported without PortAudio."""
+    mock_sd = Mock()
+    mock_sd.InputStream = Mock
+    mock_sd.query_devices = Mock(return_value=[])
+    sys.modules.setdefault("sounddevice", mock_sd)
 
 
 @pytest.fixture
