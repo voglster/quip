@@ -1,5 +1,6 @@
 """Window management and positioning for Quip application."""
 
+import os
 import re
 import subprocess
 import tkinter as tk
@@ -53,19 +54,22 @@ class WindowManager:
         self.root.withdraw()
 
         # Try different approaches for borderless window
-        try:
-            # Linux/X11 specific attributes for borderless window
-            self.root.wm_attributes(
-                "-type", "splash"
-            )  # Splash windows have no decorations
-        except tk.TclError:
+        if os.name == "nt":
+            # Windows approach for borderless overlay
+            self.root.overrideredirect(True)
             try:
-                # Alternative approach
-                self.root.wm_attributes(
-                    "-toolwindow", True
-                )  # Tool windows (Windows-specific)
+                self.root.wm_attributes("-toolwindow", True)
             except tk.TclError:
                 pass
+        else:
+            try:
+                # Linux/X11 specific attributes for borderless window
+                self.root.wm_attributes("-type", "splash")
+            except tk.TclError:
+                try:
+                    self.root.wm_attributes("-toolwindow", True)
+                except tk.TclError:
+                    pass
 
         # Keep topmost behavior
         self.root.attributes("-topmost", True)
@@ -77,15 +81,20 @@ class WindowManager:
             pass
 
     def detect_monitors(self) -> List[MonitorInfo]:
-        """Detect monitor configuration using xrandr on Linux."""
-        try:
-            # Try xrandr first (most common on Linux)
-            result = subprocess.run(
-                ["xrandr"], capture_output=True, text=True, timeout=2
-            )
-            if result.returncode == 0:
-                return self._parse_xrandr_output(result.stdout)
-        except (subprocess.TimeoutExpired, FileNotFoundError):
+        """Detect monitor configuration."""
+        if os.name != "nt":
+            try:
+                # Try xrandr first (most common on Linux)
+                result = subprocess.run(
+                    ["xrandr"], capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0:
+                    return self._parse_xrandr_output(result.stdout)
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+        else:
+            # On Windows, we could use pywin32 or screeninfo
+            # For now, we'll fall back to Tkinter's basic info
             pass
 
         # Fallback: return single monitor based on tkinter values

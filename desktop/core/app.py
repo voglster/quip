@@ -1,5 +1,6 @@
 """Main application controller that coordinates all components."""
 
+import os
 import subprocess
 import threading
 import tkinter as tk
@@ -154,11 +155,14 @@ class QuipApplication:
         """Open settings file in default editor and close Quip."""
         try:
             # Open config file with default editor
-            subprocess.Popen(
-                ["xdg-open", str(config.config_file_path)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            if os.name == "nt":
+                os.startfile(str(config.config_file_path))
+            else:
+                subprocess.Popen(
+                    ["xdg-open", str(config.config_file_path)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
             if config.debug_mode:
                 print(f"DEBUG: Opening settings: {config.config_file_path}")
         except Exception as e:

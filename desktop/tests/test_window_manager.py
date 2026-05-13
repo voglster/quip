@@ -1,5 +1,6 @@
 """Tests for window_manager module."""
 
+import os
 import subprocess
 from unittest.mock import Mock, patch
 
@@ -104,6 +105,7 @@ HDMI-A-1 disconnected (normal left inverted right x axis y axis)"""
         assert len(monitors) == 1
         assert monitors[0].name == "default"
 
+    @pytest.mark.skipif(os.name == "nt", reason="xrandr logic is bypassed on Windows")
     @patch("subprocess.run")
     def test_detect_monitors_success(self, mock_run, window_manager):
         """Test successful monitor detection."""

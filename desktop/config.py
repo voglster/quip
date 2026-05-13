@@ -16,7 +16,10 @@ class QuipConfig:
     """Handles loading and managing Quip configuration"""
 
     def __init__(self):
-        self.config_dir = Path.home() / ".config" / "quip"
+        if os.name == "nt":
+            self.config_dir = Path.home() / ".quip"
+        else:
+            self.config_dir = Path.home() / ".config" / "quip"
         self.config_file = self.config_dir / "config.toml"
         self._config_data = {}
         self._load_config()
@@ -30,7 +33,7 @@ class QuipConfig:
                 "window_width": 800,
                 "window_height": 150,
                 "transparency": 0.98,
-                "font_family": "DejaVu Sans",
+                "font_family": "Segoe UI" if os.name == "nt" else "DejaVu Sans",
             },
             "notes": {"save_path": "~/notes/Inbox"},
             "system": {"auto_install_hotkeys": True},
@@ -172,7 +175,7 @@ class QuipConfig:
     @property
     def font_family(self) -> str:
         """Get font family for UI elements"""
-        return self.get("ui", "font_family", "DejaVu Sans")
+        return self.get("ui", "font_family", "Segoe UI" if os.name == "nt" else "DejaVu Sans")
 
     @property
     def save_path(self) -> str:
