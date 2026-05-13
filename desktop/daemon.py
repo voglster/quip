@@ -1,5 +1,6 @@
 """Quip background daemon for global hotkey handling"""
 
+import os
 import sys
 import signal
 import subprocess
@@ -36,11 +37,21 @@ class QuipDaemon:
                 print(f"Spawning Quip: {quip_cmd} {quip_module}")
 
             # Launch Quip as separate process
+            popen_kwargs = {
+                "stdout": subprocess.DEVNULL,
+                "stderr": subprocess.DEVNULL if not config.debug_mode else None,
+            }
+
+            if os.name == "nt":
+                # On Windows, use creationflags to start a new process group
+                # This helps in detaching the child process
+                popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+            else:
+                popen_kwargs["start_new_session"] = True
+
             subprocess.Popen(
                 [quip_cmd, quip_module],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL if not config.debug_mode else None,
-                start_new_session=True,
+                **popen_kwargs
             )
 
         except Exception as e:
@@ -125,7 +136,8 @@ class QuipDaemon:
 
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+        if os.name != "nt":
+            signal.signal(signal.SIGTERM, self._signal_handler)
 
         # Start config watcher
         self.config_watcher = ConfigWatcher(self.on_config_change)

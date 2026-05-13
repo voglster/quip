@@ -1,5 +1,6 @@
 """Speech transcription functionality for Quip."""
 
+import os
 import json
 import threading
 import wave
@@ -107,13 +108,15 @@ class VoskEngine(TranscriptionEngine):
             Path("/opt/vosk"),
             Path.cwd() / "vosk-models",
             Path(__file__).parent / "vosk-models",  # Look next to this script
-            Path.home()
-            / ".local"
-            / "share"
-            / "quip"
-            / "desktop"
-            / "vosk-models",  # Installed location
+            Path.home() / ".local" / "share" / "quip" / "desktop" / "vosk-models",  # Linux install
+            Path.home() / ".quip" / "desktop" / "vosk-models",  # Windows install
         ]
+
+        # Add Windows AppData if on NT
+        if os.name == "nt":
+            appdata = os.environ.get("APPDATA")
+            if appdata:
+                possible_paths.append(Path(appdata) / "vosk")
 
         # Look for English models first, then any model
         model_patterns = [
